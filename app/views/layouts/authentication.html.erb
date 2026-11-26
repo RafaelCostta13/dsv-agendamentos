@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <title><%= content_for?(:title) ? yield(:title) : "Acesso administrativo" %> · DSV Doca Agenda</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %><%= csp_meta_tag %>
+    <%= stylesheet_link_tag "admin" %>
+    <%= favicon_link_tag "DSV_Logo.svg", type: "image/svg+xml" %>
+    <%= yield :head %>
+  </head>
+  <body class="auth-body">
+    <main class="auth-main">
+      <section class="auth-card" aria-labelledby="auth-title">
+        <div class="auth-brand"><%= image_tag "DSV_Logo.svg", alt: "DSV", width: 1024, height: 316 %><span>Doca Agenda</span></div>
+        <% if flash[:alert] %><p class="admin-alert" role="alert"><%= flash[:alert] %></p><% end %>
+        <% if flash[:notice] %><p class="admin-notice" role="status"><%= flash[:notice] %></p><% end %>
+        <%= yield %>
+      </section>
+    </main>
+  </body>
+</html>

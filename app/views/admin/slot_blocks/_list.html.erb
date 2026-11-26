@@ -1,0 +1,28 @@
+<section class="admin-panel" id="existing-blocks">
+  <div class="admin-panel-heading"><h2>Bloqueios existentes <span class="admin-count"><%= @total_count %></span></h2></div>
+  <%= form_with url: admin_slot_blocks_path(anchor: "existing-blocks"), method: :get, class: "admin-filters" do |form| %>
+    <div><%= form.label :date, "Data" %><%= form.date_field :date, value: @filters.parsed_date&.iso8601, min: "0001-01-01", max: "9999-12-31" %></div>
+    <div><%= form.label :dock_number, "Doca" %><%= form.select :dock_number, AgendaDefinition::DOCK_NUMBERS.map { |dock| ["Doca #{'%02d' % dock}", dock] }, {include_blank: "Todas", selected: @filters.dock_number} %></div>
+    <%= form.submit "Filtrar", class: "admin-button" %><%= link_to "Limpar filtros", admin_slot_blocks_path(anchor: "existing-blocks"), class: "admin-text-link" %>
+  <% end %>
+  <% if @blocks.empty? %><div class="admin-empty"><h3>Nenhum bloqueio encontrado</h3><p>Não há bloqueios para os filtros selecionados.</p></div><% else %>
+    <%= form_with url: review_unblock_admin_slot_blocks_path(admin_context.merge(anchor: "existing-blocks")), method: :post do |form| %>
+      <% if allowed?(:blocks_write) %><div class="admin-panel-heading"><p>Seleção limitada aos registros desta página (até <%= Admin::SlotBlocksController::PAGE_SIZE %>), conforme os filtros atuais.</p></div>
+      <div class="admin-selection-tools admin-list-tools">
+        <%= form.button "Selecionar todos os elegíveis desta página", name: "intent", value: "select_page", class: "admin-button admin-button-secondary" %>
+        <%= form.button "Desmarcar seleção", name: "intent", value: "clear_page", class: "admin-button admin-button-secondary" %>
+      </div><% end %>
+      <div class="admin-table-scroll" role="region" tabindex="0" aria-label="Lista de bloqueios, com rolagem horizontal"><table class="admin-blocks-table"><thead><tr><% (["Data", "Doca", "Janela", "Horário", "Motivo", "Criado em"] + (allowed?(:blocks_write) ? ["Selecionar", "Ações"] : [])).each do |heading| %><th scope="col"><%= heading %></th><% end %></tr></thead>
+        <tbody><% @blocks.each do |block| %><tr id="block-<%= block.id %>">
+          <td><%= l(block.blocked_date) %></td><td><%= "%02d" % block.dock_number %></td><td><%= "%02d" % block.slot_number %></td><td class="admin-nowrap"><%= admin_window(block.slot_number).join(" – ") %></td><td><%= block.reason.presence || "Não informado" %></td><td><%= admin_recorded(block.created_at) %></td>
+          <% if allowed?(:blocks_write) %><td><%= check_box_tag "block_tokens[]", block.unlock_token, @selected_ids.include?(block.id), id: "unlock-block-#{block.id}", disabled: !block.unblock_eligible?, aria: {label: "Selecionar bloqueio da doca #{block.dock_number}, janela #{block.slot_number}, #{l(block.blocked_date)}"} %></td><td><% if block.unblock_eligible? %><%= link_to "Desbloquear", unblocking_admin_slot_block_path(block, admin_context), class: "admin-text-link" %><% else %>Consulta histórica / fora do período de desbloqueio<% end %></td><% end %>
+        </tr><% end %></tbody>
+      </table></div>
+      <% if allowed?(:blocks_write) %><div class="admin-panel-heading"><%= form.button "Desbloquear selecionados", class: "admin-button" %></div><% end %>
+    <% end %>
+  <% end %>
+  <nav class="admin-pagination" aria-label="Paginação de bloqueios"><span>Página <%= @page %> de <%= @total_pages %> · <%= @total_count %> registros</span><div>
+    <% if @page > 1 %><%= link_to "Anterior", admin_slot_blocks_path(@filters.query_parameters.merge(page: @page-1, anchor: "existing-blocks")), class: "admin-button admin-button-secondary", rel: "prev" %><% end %>
+    <% if @page < @total_pages %><%= link_to "Próxima", admin_slot_blocks_path(@filters.query_parameters.merge(page: @page+1, anchor: "existing-blocks")), class: "admin-button admin-button-secondary", rel: "next" %><% end %>
+  </div></nav>
+</section>

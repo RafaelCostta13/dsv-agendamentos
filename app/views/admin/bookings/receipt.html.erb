@@ -1,0 +1,4 @@
+<% content_for :title, "Comprovante de agendamento" %>
+<% content_for :head do %><%= stylesheet_link_tag "receipt" %><% end %>
+<div class="receipt-navigation"><%= link_to "Voltar aos detalhes", admin_booking_path(@booking, admin_context), class: "admin-button admin-button-secondary" %></div>
+<%= render "bookings/receipt", booking: @booking, qr_path: receipt_admin_booking_path(@booking, format: :png) %>

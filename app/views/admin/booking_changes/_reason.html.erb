@@ -1,0 +1,3 @@
+<%= form.label :change_reason, label %>
+<%= form.text_area :change_reason, value: @change.change_reason, rows: 4, required: true, minlength: 3, maxlength: 500, aria: { describedby: "change-reason-error", invalid: @change.errors[:change_reason].any? } %>
+<p id="change-reason-error" class="admin-field-error"><%= @change.errors[:change_reason].join(" ") %></p>

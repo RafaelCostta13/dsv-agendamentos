@@ -1,0 +1,9 @@
+<% content_for :title, "Detalhes do evento" %>
+<div class="admin-page-heading"><div><p class="admin-eyebrow">AUDITORIA</p><h1><%= audit_label(@event) %></h1><p><%= audit_metadata(@event).last %></p></div><%= link_to "Voltar ao histórico", admin_audit_events_path(@audit_filters.query_parameters.merge(page:params[:page])), class:"admin-button admin-button-secondary" %></div>
+<section class="admin-panel admin-detail"><h2>Evento registrado</h2><dl>
+<dt>Data e hora</dt><dd><%= l(@event.created_at.in_time_zone) %> · Horário de Brasília</dd><dt>Entidade</dt><dd><%= audit_entity(@event) %></dd><dt>Referência</dt><dd><%= audit_reference(@event,@reference_booking,@reference_user) %></dd><dt>Realizado por</dt><dd><%= audit_actor(@event) %></dd><dt>Origem</dt><dd><%= audit_origin(@event) %></dd><dt>Motivo registrado</dt><dd class="admin-multiline"><%= @event.reason.presence || "Não registrado" %></dd>
+</dl><% if @reference_booking %><%= link_to "Consultar agendamento atual", admin_booking_path(@reference_booking), class:"admin-text-link" %><p>Os valores abaixo pertencem ao evento; não são substituídos pelos dados atuais da reserva.</p><% end %>
+</section>
+<section class="admin-panel admin-detail"><h2>Valores anteriores e posteriores</h2><%= render "comparison", event:@event %></section>
+
+<% if @reference_user %><p><%= link_to "Consultar usuário atual",admin_user_path(@reference_user),class:"admin-text-link" %></p><% end %>

@@ -1,0 +1,4 @@
+<% if @change.errors.any? %>
+  <div class="admin-alert" role="alert"><% @change.errors.each do |error| %><p><%= error.message %></p><% end %></div>
+<% end %>
+<% unless @booking.schedule_change_allowed? %><p class="admin-alert"><%= BookingCheckinPolicy::MESSAGES.fetch(:status) %></p><% end %>

@@ -1,0 +1,13 @@
+<% content_for :title, "Histórico de operações" %>
+<div class="admin-page-heading"><div><p class="admin-eyebrow">AUDITORIA</p><h1>Histórico de operações</h1><p>Consulte o histórico de alterações e operações realizadas no sistema.</p></div></div>
+<section class="admin-panel"><%= render "filters" %>
+<% if @audit_page.events.empty? %><div class="admin-empty"><h2>Nenhum evento encontrado</h2><p>Não há eventos para os filtros selecionados.</p></div><% else %>
+<div class="admin-table-scroll" role="region" tabindex="0" aria-label="Histórico de operações"><table class="admin-audit-table"><thead><tr><% ["Data e hora", "Evento", "Entidade", "Referência", "Responsável", "Origem", "Resumo", "Ação"].each do |label| %><th scope="col"><%= label %></th><% end %></tr></thead><tbody>
+<% @audit_page.events.each do |event| %><tr>
+  <td class="admin-nowrap"><%= l(event.created_at.in_time_zone) %></td><td><%= render "badge", event: event %></td><td><%= audit_entity(event) %></td>
+  <td><%= audit_reference(event,@audit_page.bookings[event.entity_id],@audit_page.users[event.entity_id]) %></td><td><%= audit_actor(event) %></td><td><%= audit_origin(event) %></td><td><%= audit_metadata(event).last %><% if event.reason.present? %><p><%= truncate(event.reason,length:120) %></p><% end %></td>
+  <td><%= link_to "Visualizar", admin_audit_event_path(event,@audit_filters.query_parameters.merge(page:@audit_page.page)), class:"admin-text-link" %></td>
+</tr><% end %></tbody></table></div>
+<% end %>
+<%= render "pagination", audit_page: @audit_page, path: ->(page) { admin_audit_events_path(@audit_filters.query_parameters.merge(page:page)) } %>
+</section>

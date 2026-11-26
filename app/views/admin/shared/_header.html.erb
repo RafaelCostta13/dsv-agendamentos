@@ -1,0 +1,8 @@
+<header class="admin-header">
+  <%= image_tag "DSV_Logo.svg", alt: "DSV", width: 1024, height: 316, class: "admin-logo" %>
+  <div class="admin-brand">Doca Agenda<span>PAINEL ADMINISTRATIVO</span></div>
+  <details class="admin-account">
+    <summary><span class="admin-avatar" aria-hidden="true"><%= current_user.name.split.filter_map { |part| part[0] }.first(2).join.upcase %></span><span><strong><%= current_user.name %></strong><small><%= User::ROLES.fetch(current_user.role) %></small></span></summary>
+    <div class="admin-account-menu"><%= link_to "Meu perfil", admin_profile_path %><%= link_to "Alterar senha", edit_password_path %><%= button_to "Sair do sistema", logout_path, method: :delete %></div>
+  </details>
+</header>

@@ -1,0 +1,21 @@
+<article class="booking-receipt" aria-labelledby="receipt-title" data-receipt-state="<%= booking.status %>">
+  <div class="receipt-brand"><%= image_tag "DSV_Logo.svg", alt: "DSV", width: 100, height: 31 %><div><strong>Doca Agenda</strong><span>COLETAS E ENTREGAS</span></div></div>
+  <% headings = { "agendado" => "Agendamento confirmado!", "cancelado" => "Agendamento cancelado", "reagendamento" => "Reagendamento obrigatório", "em_operacao" => "Em operação", "liberado" => "Liberado" } %>
+  <header class="receipt-heading"><% if booking.status == "agendado" %><span class="receipt-success" aria-hidden="true">✓</span><% end %><h1 id="receipt-title"><%= headings.fetch(booking.status) %></h1></header>
+  <% if booking.status == "agendado" %><p class="receipt-subtitle">Apresente este comprovante na chegada à DSV.</p><% else %><p class="receipt-subtitle">Consulta do estado atual. Este documento não autoriza uma nova entrada.<%= " A posição abaixo não representa uma reserva ativa." if booking.status.in?(%w[cancelado reagendamento]) %></p><% end %>
+  <div class="receipt-protocol"><span>PROTOCOLO</span><strong class="protocol"><%= booking.protocol %></strong></div>
+  <dl class="receipt-details">
+    <div><dt>Operação</dt><dd><%= booking.operation == "entrega" ? "Entrega" : "Coleta" %></dd></div>
+    <div><dt>Data<%= " anterior" if booking.status.in?(%w[cancelado reagendamento]) %></dt><dd><%= l(booking.booking_date) %></dd></div>
+    <div><dt>Doca</dt><dd><%= "%02d" % booking.dock_number %></dd></div>
+    <div><dt>Horário</dt><dd><%= AgendaDefinition::SLOT_WINDOWS.fetch(booking.slot_number).join(" às ") %></dd></div>
+    <div><dt>Empresa / transportadora</dt><dd><%= booking.company %></dd></div>
+    <div><dt>Placa</dt><dd><%= booking.plate %></dd></div>
+  </dl>
+  <% if booking.status == "agendado" %>
+    <figure class="receipt-qr"><%= image_tag qr_path, alt: "QR Code com destino DSV, protocolo e posição agendada em horário de Brasília", width: 220, height: 220 %><figcaption>Identificação do agendamento · Horário de Brasília</figcaption></figure>
+    <p class="receipt-save">Salve uma captura de tela deste comprovante para apresentar na chegada à DSV.</p>
+    <div class="receipt-guidance"><strong>Horário limite para check-in: <%= AgendaDefinition.checkin_cutoff(booking.booking_date).strftime("%H:%M") %>.</strong><p>O check-in não poderá ocorrer antes do início da janela agendada. A entrada dependerá da disponibilidade física da doca. O comprovante não substitui o check-in.</p></div>
+  <% end %>
+  <p class="receipt-validity">Consulte a DSV em caso de alteração. Capturas antigas não são atualizadas; o registro atual da reserva prevalece.</p>
+</article>

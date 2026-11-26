@@ -1,0 +1,33 @@
+<% checkin = @operation_action == "checkin" %>
+<% title = checkin ? "Registrar check-in?" : "Liberar doca" %>
+<% content_for :title, title %>
+<div class="admin-page-heading"><div><p class="admin-eyebrow">CONTROLE OPERACIONAL</p><h1><%= title %></h1><p>Confira os dados antes de confirmar a operação.</p></div></div>
+<section class="admin-panel admin-detail">
+  <dl>
+    <dt>Protocolo</dt><dd><%= @booking.protocol %></dd>
+    <dt>Placa</dt><dd><%= @booking.plate %></dd>
+    <dt>Doca</dt><dd><%= "%02d" % @booking.dock_number %></dd>
+    <dt>Horário agendado</dt><dd><%= l(@booking.booking_date) %> · <%= admin_window(@booking.slot_number).join(" – ") %></dd>
+    <dt>Status atual</dt><dd><%= admin_booking_status(@booking) %></dd>
+    <% unless checkin %><dt>Check-in</dt><dd><%= admin_recorded(@booking.checkin_at) %></dd><% end %>
+  </dl>
+  <% if @operation.errors.any? %>
+    <div class="admin-alert" role="alert"><% @operation.errors.each do |error| %><p><%= error.message %></p><% end %></div>
+  <% end %>
+  <% reason = checkin ? @checkin_reason : (@booking.status == "em_operacao" ? nil : :status) %>
+  <% if reason %><p class="admin-alert"><%= BookingCheckinPolicy::MESSAGES.fetch(reason) %></p><% end %>
+  <%= form_with scope: :booking, url: (checkin ? checkin_admin_booking_path(@booking, admin_context) : release_admin_booking_path(@booking, admin_context)), method: :patch, class: "admin-operation-form" do |form| %>
+    <%= form.hidden_field :lock_version, value: @operation.lock_version %>
+    <% if checkin %>
+      <p>Confirma a entrada do veículo?</p>
+    <% else %>
+      <%= form.label :release_remark, "Observação da liberação" %>
+      <%= form.text_area :release_remark, value: @operation.release_remark, rows: 4, required: true, minlength: 3, maxlength: 500, aria: { describedby: "release-remark-error", invalid: @operation.errors[:release_remark].any? } %>
+      <p id="release-remark-error" class="admin-field-error"><%= @operation.errors[:release_remark].join(" ") %></p>
+    <% end %>
+    <div class="admin-operation-actions">
+      <%= link_to "Voltar", admin_booking_path(@booking, admin_context), class: "admin-button admin-button-secondary" %>
+      <%= form.submit(checkin ? "Confirmar check-in" : "Confirmar liberação", class: "admin-button", disabled: reason.present? || (@operation.errors.any? && @operation.http_status == :conflict)) %>
+    </div>
+  <% end %>
+</section>

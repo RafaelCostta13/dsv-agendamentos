@@ -1,0 +1,44 @@
+<div id="dashboard-data" data-date="<%= @dashboard.date.iso8601 %>" data-updated-at="<%= @rendered_at.iso8601 %>" data-updated-label="<%= @rendered_at.strftime("%H:%M:%S") %>">
+<div class="admin-indicators" aria-label="Indicadores operacionais">
+  <% [["Agendamentos", :bookings, "Reservas que consomem capacidade"], ["Horários disponíveis", :available, "Elegíveis para novo agendamento"], ["Entregas", :deliveries, "Na data selecionada"], ["Coletas", :pickups, "Na data selecionada"]].each do |label, key, caption| %>
+    <section class="admin-indicator" data-indicator="<%= key %>"><h2><%= label %></h2><strong><%= @dashboard.indicators.fetch(key) %></strong><p><%= caption %></p></section>
+  <% end %>
+  <section class="admin-indicator admin-pending" data-indicator="pending_reschedules"><h2><%= link_to "Reagendamentos pendentes", admin_bookings_path(status: "reagendamento") %></h2><strong><%= @dashboard.pending_reschedules %></strong><p>Pendências gerais · todas as datas</p></section>
+</div>
+<section class="admin-panel" aria-labelledby="matrix-title">
+  <div class="admin-panel-heading"><div><h2 id="matrix-title">Docas e horários</h2><p><%= l(selected_date) %> · <%= AgendaDefinition::DOCK_NUMBERS.size %> docas · <%= AgendaDefinition::SLOT_NUMBERS.size %> janelas</p></div><span>Selecione uma reserva ou bloqueio para consultar os detalhes.</span></div>
+  <div class="admin-table-scroll" tabindex="0" role="region" aria-label="Matriz de docas e horários, com rolagem horizontal">
+    <table class="admin-matrix">
+      <caption class="admin-sr-only">Situação das docas em <%= l(selected_date) %></caption>
+      <thead><tr><th scope="col">Doca</th><% AgendaDefinition::SLOT_WINDOWS.each do |slot, times| %><th scope="col">Janela <%= "%02d" % slot %><span><%= times.first %> – <%= times.last %></span></th><% end %></tr></thead>
+      <tbody>
+        <% AgendaDefinition::DOCK_NUMBERS.each do |dock| %>
+          <tr><th scope="row">Doca <%= "%02d" % dock %></th>
+            <% AgendaDefinition::SLOT_NUMBERS.each do |slot| %>
+              <% cell = @dashboard.cell(dock, slot) %>
+              <td data-state="<%= cell.state %>">
+                <% if cell.booking %>
+                  <%= link_to admin_booking_path(cell.booking, date: selected_date.iso8601), class: "admin-cell admin-state-#{cell.state} #{'admin-overdue' if cell.booking.operation_overdue? || cell.booking.late_arrival?}", aria: { label: "Doca #{dock}, #{admin_window(slot).join(" – ")}, #{cell.state == 'inconsistent' ? admin_state_label(cell.state) : admin_booking_status(cell.booking)}, protocolo #{cell.booking.protocol}" } do %>
+                    <strong><%= cell.state == "inconsistent" ? admin_state_label(cell.state) : admin_booking_status(cell.booking) %></strong><span><%= truncate(cell.booking.protocol, length: 15) %></span>
+                    <% if cell.state == "inconsistent" %><small><%= admin_booking_status(cell.booking) %> + bloqueio</small><% end %>
+                  <% end %>
+                <% elsif cell.block %>
+                  <%= link_to admin_slot_blocks_path(date: selected_date.iso8601, dock_number: dock, anchor: "block-#{cell.block.id}"), class: "admin-cell admin-state-blocked", title: cell.block.reason.presence || "Motivo não informado" do %>
+                    <strong>Bloqueado</strong><span>Consultar motivo</span>
+                  <% end %>
+                <% else %>
+                  <div class="admin-cell admin-state-<%= cell.state %>"><span><%= admin_state_label(cell.state) %></span></div>
+                <% end %>
+              </td>
+            <% end %>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <ul class="admin-legend" aria-label="Legenda dos estados">
+    <% %w[available agendado em_operacao liberado blocked ended outside_horizon inconsistent].each do |state| %><li><span class="admin-legend-marker admin-state-<%= state %>" aria-hidden="true"></span><%= admin_state_label(state) %></li><% end %>
+  </ul>
+</section>
+
+</div>

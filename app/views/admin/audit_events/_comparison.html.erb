@@ -1,0 +1,6 @@
+<% rows = audit_rows(event) %>
+<% if rows.empty? %><p>Valores históricos não registrados.</p><% else %>
+<div class="admin-table-scroll" role="region" tabindex="0" aria-label="Comparação dos valores históricos"><table class="admin-audit-comparison"><thead><tr><th>Campo</th><th>Anterior</th><th>Novo</th></tr></thead><tbody>
+<% rows.each do |row| %><tr class="<%= "admin-audit-changed" if row[:changed] %>"><th scope="row"><%= row[:label] %><% if row[:changed] %><small>Alterado</small><% end %></th><td class="admin-audit-before"><%= row[:before] %></td><td class="admin-audit-after"><%= row[:after] %></td></tr><% end %>
+</tbody></table></div>
+<% end %>

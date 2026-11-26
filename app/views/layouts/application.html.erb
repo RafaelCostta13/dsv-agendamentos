@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <title><%= t("app.name") %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= stylesheet_link_tag :app %>
+    <%= yield :head %>
+    <%= favicon_link_tag "DSV_Logo.svg", type: "image/svg+xml" %>
+  </head>
+  <body>
+    <main><%= yield %></main>
+  </body>
+</html>

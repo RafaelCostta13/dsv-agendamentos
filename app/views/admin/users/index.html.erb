@@ -1,0 +1,16 @@
+<% content_for :title,"Usuários" %>
+<div class="admin-page-heading"><div><h1>Usuários</h1><p>Gerencie as contas e os perfis de acesso ao sistema.</p></div><%= link_to "Novo usuário",new_admin_user_path,class:"admin-button" %></div>
+<div class="admin-indicators admin-user-indicators"><% [["Total de usuários",:total],["Usuários ativos",:active],["Usuários inativos",:inactive]].each do |label,key| %><section class="admin-indicator" data-user-indicator="<%= key %>"><h2><%= label %></h2><strong><%= @totals.fetch(key) %></strong></section><% end %></div>
+<section class="admin-panel">
+<% if @user_filters.errors.any? %><div class="admin-alert" role="alert"><% @user_filters.errors.each do |error| %><p><%= error.message %></p><% end %></div><% end %>
+<%= form_with url:admin_users_path,method: :get,class:"admin-filters" do |form| %>
+<div><%= form.label :q,"Pesquisar por nome ou e-mail" %><%= form.text_field :q,value:@user_filters.q,maxlength:100 %></div>
+<div><%= form.label :role,"Perfil" %><%= form.select :role,User::ROLES.map { |key,value| [value,key] },{include_blank:"Todos",selected:@user_filters.role} %></div>
+<div><%= form.label :state,"Status" %><%= form.select :state,[["Ativos","active"],["Inativos","inactive"]],{include_blank:"Todos",selected:@user_filters.state} %></div>
+<%= form.submit "Filtrar",class:"admin-button" %><%= link_to "Limpar filtros",admin_users_path,class:"admin-text-link" %><% end %>
+<% if @users.empty? %><div class="admin-empty"><h2>Nenhum usuário encontrado</h2></div><% else %>
+<div class="admin-table-scroll" role="region" tabindex="0" aria-label="Lista de usuários"><table class="admin-users-table"><thead><tr><% ["Nome completo","E-mail","Perfil","Status","Data de cadastro","Ações"].each do |label| %><th scope="col"><%= label %></th><% end %></tr></thead><tbody>
+<% @users.each do |user| %><tr><td><%= user.name %></td><td><%= user.email %></td><td><%= User::ROLES.fetch(user.role) %></td><td><span class="admin-status <%= user.active ? "admin-audit-success" : "admin-audit-neutral" %>"><%= user.active ? "Ativo" : "Inativo" %></span></td><td><%= admin_recorded(user.created_at) %></td><td><%= link_to "Visualizar",admin_user_path(user,@user_filters.query_parameters),class:"admin-text-link" %> · <%= link_to "Editar",edit_admin_user_path(user),class:"admin-text-link" %> · <%= link_to user.active ? "Desativar" : "Ativar",user.active ? deactivation_admin_user_path(user) : activation_admin_user_path(user),class:"admin-text-link" %></td></tr><% end %>
+</tbody></table></div><% end %>
+<nav class="admin-pagination" aria-label="Paginação de usuários"><span>Página <%= @page %> de <%= @total_pages %> · <%= @total_count %> usuários</span><div><% if @page > 1 %><%= link_to "Anterior",admin_users_path(@user_filters.query_parameters.merge(page:@page-1)),rel:"prev",class:"admin-button admin-button-secondary" %><% end %><% if @page < @total_pages %><%= link_to "Próxima",admin_users_path(@user_filters.query_parameters.merge(page:@page+1)),rel:"next",class:"admin-button admin-button-secondary" %><% end %></div></nav>
+</section>

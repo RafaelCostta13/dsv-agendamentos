@@ -1,0 +1,8 @@
+<% content_for :title,@command == "activate" ? "Ativar usuário" : "Desativar usuário" %>
+<div class="admin-page-heading"><h1><%= @command == "activate" ? "Ativar usuário" : "Desativar usuário" %></h1></div>
+<section class="admin-panel admin-detail"><p>Confirme a operação para <strong><%= @user.name %></strong> (<%= @user.email %>).</p><%= render "errors" %>
+<%= form_with scope: :user,url:@command == "activate" ? activate_admin_user_path(@user) : deactivate_admin_user_path(@user),method: :patch,class:"admin-operation-form" do |form| %>
+<%= form.hidden_field :lock_version,value:@submitted_version || @user.lock_version %>
+<% if @command == "deactivate" %><%= form.label :reason,"Motivo da desativação" %><%= form.text_area :reason,value:@reason,required:true,minlength:3,maxlength:500 %><% end %>
+<div class="admin-operation-actions"><%= form.submit "Confirmar",class:"admin-button" %><%= link_to "Voltar",admin_user_path(@user),class:"admin-button admin-button-secondary" %></div>
+<% end %></section>

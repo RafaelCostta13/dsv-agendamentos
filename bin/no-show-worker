@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+$stdout.sync = true
+require_relative "../config/environment"
+Rails.logger = ActiveSupport::TaggedLogging.new(ActiveSupport::Logger.new($stdout, level: Logger::INFO))
+# Empty polls stay quiet; summaries and failures remain visible in Compose logs.
+ProcessNoShowsJob.logger = ActiveSupport::Logger.new($stdout, level: Logger::WARN)
+ProcessNoShowsJob.log_arguments = false
+worker = NoShowWorker.new
+%w[INT TERM].each { |signal| Signal.trap(signal) { worker.stop } }
+worker.run

@@ -1,0 +1,14 @@
+<% content_for :title, "Cancelar agendamento" %>
+<div class="admin-page-heading"><div><p class="admin-eyebrow">GERENCIAMENTO DA RESERVA</p><h1>Cancelar agendamento</h1><p>Confira os dados e informe o motivo antes de confirmar o cancelamento.</p></div></div>
+<%= render "current_booking" %>
+<section class="admin-panel admin-detail">
+  <%= render "errors" %>
+  <%= form_with scope: :booking, url: cancel_admin_booking_path(@booking, admin_context), method: :patch, class: "admin-operation-form" do |form| %>
+    <%= form.hidden_field :lock_version, value: @change.lock_version %>
+    <%= render "reason", form: form, label: "Motivo do cancelamento" %>
+    <div class="admin-operation-actions">
+      <%= link_to "Voltar", admin_booking_path(@booking, admin_context), class: "admin-button admin-button-secondary" %>
+      <%= form.submit "Confirmar cancelamento", class: "admin-button admin-button-danger", disabled: @version_conflict || !@booking.schedule_change_allowed? %>
+    </div>
+  <% end %>
+</section>

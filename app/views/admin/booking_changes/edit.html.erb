@@ -1,0 +1,41 @@
+<% title = @booking.status == "reagendamento" ? "Reagendar" : "Alterar agendamento" %>
+<% content_for :title, title %>
+<div class="admin-page-heading"><div><p class="admin-eyebrow">GERENCIAMENTO DA RESERVA</p><h1><%= title %></h1><p>Selecione uma nova posição. A disponibilidade será revalidada na confirmação.</p></div></div>
+<%= render "current_booking" %>
+<section class="admin-panel admin-detail" id="new-position">
+  <h2>Novo agendamento</h2>
+  <%= render "errors" %>
+  <%= form_with scope: :booking, url: reschedule_admin_booking_path(@booking, admin_context), method: :patch, class: "admin-operation-form admin-change-form" do |form| %>
+    <%= form.hidden_field :lock_version, value: @change.lock_version %>
+    <%= form.hidden_field :booking_date, value: @change.booking_date&.iso8601 %>
+    <%= form.hidden_field :dock_number, value: @change.dock_number %>
+    <fieldset><legend>Data do agendamento</legend><div class="admin-position-grid admin-position-dates">
+      <% @dates.each_with_index do |date, index| %>
+        <%= button_tag type: "submit", name: "selected_date", value: date.iso8601, formaction: reschedule_admin_booking_path(@booking, admin_context.merge(anchor: "new-position")), formnovalidate: true, class: "admin-position-choice", aria: { pressed: @change.booking_date == date } do %>
+          <strong><%= ["Hoje", "Amanhã", "Depois de amanhã"][index] %></strong><span><%= l(date) %></span>
+        <% end %>
+      <% end %>
+    </div><p class="admin-field-error"><%= @change.errors[:booking_date].join(" ") %></p></fieldset>
+    <fieldset><legend>Selecione a doca</legend><div class="admin-position-grid admin-position-docks">
+      <% AgendaDefinition::DOCK_NUMBERS.each do |dock| %>
+        <%= button_tag "Doca #{'%02d' % dock}", type: "submit", name: "selected_dock", value: dock, formaction: reschedule_admin_booking_path(@booking, admin_context.merge(anchor: "new-position")), formnovalidate: true, class: "admin-position-choice", aria: { pressed: @change.dock_number.to_s == dock.to_s } %>
+      <% end %>
+    </div><p class="admin-field-error"><%= @change.errors[:dock_number].join(" ") %></p></fieldset>
+    <fieldset><legend>Horários disponíveis</legend><p>Consulta para <%= @change.booking_date ? l(@change.booking_date) : "data inválida" %>, doca <%= @change.dock_number %>. A própria reserva é desconsiderada somente nesta consulta.</p>
+      <div class="admin-position-grid admin-position-slots">
+        <% AgendaDefinition::SLOT_WINDOWS.each do |slot, times| %>
+          <% available = @availability.available?(slot) %>
+          <label class="admin-position-choice <%= "admin-position-unavailable" unless available %>">
+            <%= form.radio_button :slot_number, slot, checked: @change.slot_number.to_s == slot.to_s, disabled: !available %>
+            <span><strong><%= times.join(" – ") %></strong><span><%= available ? "Disponível" : "Indisponível" %></span></span>
+          </label>
+        <% end %>
+      </div><p class="admin-field-error"><%= @change.errors[:slot_number].join(" ") %></p>
+    </fieldset>
+    <%= render "reason", form: form, label: "Motivo da alteração" %>
+    <div class="admin-operation-actions">
+      <%= link_to "Voltar", admin_booking_path(@booking, admin_context), class: "admin-button admin-button-secondary" %>
+      <%= form.button "Revisar alteração", name: "intent", value: "review", formnovalidate: true, class: "admin-button", disabled: @version_conflict || !@booking.schedule_change_allowed? %>
+    </div>
+  <% end %>
+</section>

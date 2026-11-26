@@ -1,0 +1,12 @@
+<% content_for :title, "Detalhes do agendamento" %>
+<div class="admin-page-heading"><div><p class="admin-eyebrow">CONSULTA DA RESERVA</p><h1>Detalhes do agendamento</h1><p class="admin-protocol"><%= @booking.protocol %></p></div><%= link_to "Voltar à lista", admin_bookings_path(admin_context), class: "admin-button admin-button-secondary" %></div>
+<div class="admin-detail-grid">
+  <div class="admin-detail-wide"><%= link_to "Visualizar comprovante", receipt_admin_booking_path(@booking, admin_context), class: "admin-button admin-button-secondary" %></div>
+  <section class="admin-panel admin-detail"><h2>Identificação</h2><dl><dt>Protocolo</dt><dd><%= @booking.protocol %></dd><dt>Status</dt><dd><span class="admin-status admin-state-<%= @booking.status %> <%= "admin-overdue" if @booking.operation_overdue? || @booking.late_arrival? %>"><%= admin_booking_status(@booking) %></span></dd><dt>Data de criação</dt><dd><%= admin_recorded(@booking.created_at) %></dd></dl></section>
+  <section class="admin-panel admin-detail"><h2>Responsável</h2><dl><dt>Nome</dt><dd><%= @booking.contact_name %></dd><dt>Empresa / transportadora</dt><dd><%= @booking.company %></dd></dl></section>
+  <section class="admin-panel admin-detail"><h2>Veículo e nota fiscal</h2><dl><dt>Número da NF</dt><dd><%= @booking.invoice %></dd><dt>Placa</dt><dd><%= @booking.plate %></dd><dt>Modelo do veículo</dt><dd><%= @booking.vehicle_model %></dd></dl></section>
+  <section class="admin-panel admin-detail"><h2>Agendamento</h2><dl><dt>Operação</dt><dd><%= admin_operation_label(@booking.operation) %></dd><dt>Data agendada</dt><dd><%= l(@booking.booking_date) %></dd><dt>Doca</dt><dd><%= "%02d" % @booking.dock_number %></dd><dt>Horário inicial</dt><dd><%= admin_window(@booking.slot_number).first %></dd><dt>Horário final</dt><dd><%= admin_window(@booking.slot_number).last %></dd></dl></section>
+  <%= render "operational_control" %>
+</div>
+<%= link_to "Voltar ao Dashboard", admin_root_path(date: selected_date.iso8601), class: "admin-text-link" %>
+<%= render "history" %>

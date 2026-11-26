@@ -1,0 +1,2 @@
+<% messages = @operation ? @operation.errors.map(&:message) : @user&.errors&.map(&:message) || [] %>
+<% if messages.any? %><div class="admin-alert" role="alert"><% messages.uniq.each do |message| %><p><%= message %></p><% end %></div><% end %>

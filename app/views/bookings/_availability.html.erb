@@ -1,0 +1,16 @@
+<fieldset class="availability" aria-describedby="slot-error">
+  <legend>Horários disponíveis<% if @availability&.date && @availability&.dock_number %> — Doca <%= "%02d" % @availability.dock_number %><% end %></legend>
+  <% if @availability&.date %>
+    <p class="availability-caption">Consulta para <%= @availability.date.strftime("%d/%m/%Y") %>. Atualize após alterar a doca.</p>
+  <% end %>
+  <div class="choice-grid slots">
+    <% AgendaDefinition::SLOT_WINDOWS.each do |number, times| %>
+      <% available = @availability&.available?(number) %>
+      <label class="choice-card slot-card <%= "is-unavailable" unless available %>">
+        <%= form.radio_button :slot_number, number, checked: @booking.slot_number.to_s == number.to_s, disabled: !available, required: true %>
+        <span><strong><%= times.join(" – ") %></strong><small>Janela <%= number %><%= " · 48 min" if number == AgendaDefinition::SLOT_NUMBERS.last %></small><% unless available %><small>Indisponível</small><% end %></span>
+      </label>
+    <% end %>
+  </div>
+  <span class="field-error" id="slot-error"><%= @booking.errors[:slot_number].join(" ") %></span>
+</fieldset>

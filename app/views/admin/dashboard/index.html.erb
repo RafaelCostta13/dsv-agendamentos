@@ -1,0 +1,18 @@
+<% content_for :title, "Dashboard" %>
+<% content_for :head do %><%= javascript_include_tag "dashboard_polling", nonce: @dashboard_nonce, defer: true %><% end %>
+<div id="dashboard-polling" data-refresh-url="<%= admin_dashboard_refresh_path %>" data-interval="<%= Admin::DashboardController::POLL_INTERVAL_MS %>" data-timeout="<%= Admin::DashboardController::POLL_TIMEOUT_MS %>" data-max-retry="<%= Admin::DashboardController::MAX_RETRY_MS %>">
+<div class="admin-page-heading">
+  <div><p class="admin-eyebrow">OPERAÇÃO DE DOCAS</p><h1>Dashboard</h1><p>Acompanhe os agendamentos e a ocupação das docas.</p></div>
+  <%= link_to "Ver agendamentos", admin_bookings_path(date: selected_date.iso8601), class: "admin-button admin-button-secondary", data: { dashboard_bookings: true } %>
+</div>
+<%= form_with url: admin_root_path, method: :get, class: "admin-date-form", id: "dashboard-date-form" do |form| %>
+  <div><%= form.label :date, "Data da consulta" %><%= form.date_field :date, value: selected_date.iso8601, min: "0001-01-01", max: "9999-12-31", required: true %></div>
+  <%= form.submit "Atualizar", class: "admin-button" %>
+  <span><%= l(selected_date) %> · Horário de Brasília</span>
+<% end %>
+<div class="admin-polling-status" data-state="active" role="status" aria-live="polite">
+  <span class="admin-polling-dot" aria-hidden="true"></span><span data-polling-status>Atualização automática ativa</span>
+  <span>Última atualização: <time data-polling-time datetime="<%= @rendered_at.iso8601 %>"><%= @rendered_at.strftime("%H:%M:%S") %></time> · Horário de Brasília</span>
+</div>
+<%= render "content" %>
+</div>

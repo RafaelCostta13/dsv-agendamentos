@@ -1,0 +1,12 @@
+<section class="admin-panel admin-detail">
+  <h2>Agendamento atual</h2>
+  <dl>
+    <dt>Protocolo</dt><dd><%= @booking.protocol %></dd>
+    <dt>Responsável</dt><dd><%= @booking.contact_name %></dd>
+    <dt>Empresa / transportadora</dt><dd><%= @booking.company %></dd>
+    <dt>Placa</dt><dd><%= @booking.plate %></dd>
+    <dt>Operação</dt><dd><%= admin_operation_label(@booking.operation) %></dd>
+    <dt>Data · Doca · Horário</dt><dd><%= l(@booking.booking_date) %> · Doca <%= "%02d" % @booking.dock_number %> · <%= admin_window(@booking.slot_number).join(" – ") %></dd>
+    <dt>Status</dt><dd><%= admin_booking_status(@booking) %></dd>
+  </dl>
+</section>

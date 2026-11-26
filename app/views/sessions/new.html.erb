@@ -1,0 +1,9 @@
+<% content_for :title, "Acesso administrativo" %>
+<% content_for :head do %><%= javascript_include_tag "authentication", nonce: @authentication_nonce, defer: true %><% end %>
+<h1 id="auth-title" class="admin-sr-only">Login</h1>
+<%= form_with scope: :login, url: login_path, class: "auth-form" do |form| %>
+  <div><%= form.label :email, "E-mail" %><%= form.email_field :email, value: @email, required: true, maxlength: 254, autocomplete: "username", autofocus: true %></div>
+  <div><%= form.label :password, "Senha" %><div class="auth-password"><%= form.password_field :password, value: nil, required: true, maxlength: 72, autocomplete: "current-password", data: { password_input: true } %><button type="button" class="auth-password-toggle" data-password-toggle aria-label="Mostrar senha" aria-controls="login_password" aria-pressed="false" title="Mostrar senha"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path class="auth-eye-slash" d="m3 3 18 18"/></svg></button></div></div>
+  <%= form.submit "Entrar no sistema", class: "admin-button auth-submit" %>
+<% end %>
+<p class="auth-support"><strong>Problemas de acesso?</strong><br>Entre em contato com o administrador do sistema.</p>

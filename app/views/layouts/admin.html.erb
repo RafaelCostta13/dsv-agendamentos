@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <title><%= content_for?(:title) ? yield(:title) : "Painel administrativo" %> · DSV Doca Agenda</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= stylesheet_link_tag "admin" %>
+    <%= favicon_link_tag "DSV_Logo.svg", type: "image/svg+xml" %>
+    <%= yield :head %>
+  </head>
+  <body class="admin-body">
+    <a href="#admin-content" class="admin-skip">Pular para o conteúdo</a>
+    <%= render "admin/shared/header" %>
+    <div class="admin-shell">
+      <%= render "admin/shared/sidebar" %>
+      <main id="admin-content" class="admin-content">
+        <% if @filters&.errors&.any? %>
+          <div class="admin-alert" role="alert"><% @filters.errors.each do |error| %><p><%= error.message %></p><% end %></div>
+        <% end %>
+        <% if flash[:notice] %><p class="admin-notice" role="status"><%= flash[:notice] %></p><% end %>
+        <% if flash[:alert] %><p class="admin-alert" role="alert"><%= flash[:alert] %></p><% end %>
+        <%= yield %>
+        <footer class="admin-footer">DSV · Doca Agenda <span>Horário de Brasília</span></footer>
+      </main>
+    </div>
+  </body>
+</html>

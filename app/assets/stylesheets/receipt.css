@@ -1,0 +1,39 @@
+.booking-receipt { box-sizing: border-box; width: 100%; max-width: 540px; min-width: 0; margin: 20px auto; padding: 24px; border: 1px solid #d5e0ed; border-radius: 12px; background: white; color: #16304e; font-family: inherit; overflow-wrap: anywhere; }
+.booking-receipt * { box-sizing: border-box; }
+.receipt-brand { display: flex; align-items: center; gap: 16px; padding-bottom: 18px; border-bottom: 1px solid #d5e0ed; }
+.receipt-brand img { flex-shrink: 0; width: 100px; height: auto; }
+.receipt-brand strong { display: block; font-size: 19px; }
+.receipt-brand span { display: block; margin-top: 4px; font-size: 9px; letter-spacing: .12em; }
+.receipt-heading { text-align: center; margin: 20px 0 8px; }
+.receipt-heading h1 { margin: 8px 0; color: #16304e; font-size: 24px; line-height: 1.25; }
+.receipt-success { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: #e1f3e9; color: #176b44; font-size: 24px; font-weight: 700; }
+[data-receipt-state="agendado"] .receipt-heading h1 { color: #176b44; }
+.receipt-subtitle { margin: 8px 0 18px; text-align: center; font-size: 14px; line-height: 1.5; }
+.receipt-protocol { padding: 14px; border-radius: 8px; background: #eef3fa; text-align: center; }
+.receipt-protocol span { display: block; font-size: 11px; letter-spacing: .1em; }
+.receipt-protocol strong { display: block; margin-top: 6px; color: #06265a; font-size: 20px; line-height: 1.4; user-select: text; overflow-wrap: anywhere; }
+.receipt-details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px 20px; margin: 20px 0; }
+.receipt-details div { min-width: 0; }
+.receipt-details dt { color: #526780; font-size: 12px; }
+.receipt-details dd { margin: 4px 0 0; font-size: 15px; font-weight: 650; }
+.receipt-details div:nth-child(5) { grid-column: 1 / -1; }
+.receipt-qr { margin: 18px 0; text-align: center; }
+.receipt-qr img { display: block; width: 220px; max-width: 100%; height: auto; aspect-ratio: 1; margin: 0 auto; background: white; }
+.receipt-qr figcaption { font-size: 11px; color: #526780; margin-top: 6px; }
+.receipt-save { font-size: 14px; text-align: center; line-height: 1.5; }
+.receipt-guidance { padding: 13px; border: 1px solid #d5e0ed; border-radius: 8px; font-size: 12px; line-height: 1.5; }
+.receipt-guidance p { margin: 6px 0 0; }
+.receipt-validity { margin: 16px 0 0; font-size: 11px; line-height: 1.5; color: #526780; }
+.receipt-navigation { max-width: 540px; margin: 16px auto; }
+.receipt-navigation a:focus-visible { outline: 3px solid #386da8; outline-offset: 3px; }
+@media (max-width: 360px) { .booking-receipt { padding: 16px; } .receipt-heading h1 { font-size: 21px; } .receipt-protocol strong { font-size: 18px; } }
+@media print {
+  @page { margin: 12mm; }
+  body, .admin-body { background: white; margin: 0; }
+  .booking-header, .booking-footer, .admin-header, .admin-sidebar, .admin-footer, .admin-skip, .receipt-navigation { display: none !important; }
+  .admin-shell { display: block; }
+  .admin-content, .booking-page { padding: 0; margin: 0; max-width: none; }
+  .booking-receipt { margin: 0 auto; border: 0; padding: 0; max-width: 140mm; break-inside: avoid; color: #000; }
+  .receipt-protocol { background: white; border: 1px solid #777; }
+  .receipt-details div, .receipt-qr, .receipt-guidance { break-inside: avoid; }
+}

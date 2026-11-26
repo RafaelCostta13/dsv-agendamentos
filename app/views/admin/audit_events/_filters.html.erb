@@ -1,0 +1,11 @@
+<% if @audit_filters.errors.any? %><div class="admin-alert" role="alert"><% @audit_filters.errors.full_messages.each do |message| %><p><%= message %></p><% end %></div><% end %>
+<%= form_with url: admin_audit_events_path, method: :get, class: "admin-filters" do |form| %>
+  <div><%= form.label :start_date, "Data inicial" %><%= form.date_field :start_date, value: @audit_filters.start_date, min: "0001-01-01", max: "9999-12-31" %></div>
+  <div><%= form.label :end_date, "Data final" %><%= form.date_field :end_date, value: @audit_filters.end_date, min: "0001-01-01", max: "9999-12-31" %></div>
+  <% events = current_user.role == "admin" ? Admin::AuditEventsHelper::AUDIT_EVENTS : Admin::AuditEventsHelper::AUDIT_EVENTS.reject { |key,_| key.start_with?("user_") || %w[password_changed login_success logout booking_exported].include?(key) } %>
+  <div><%= form.label :event, "Evento" %><%= form.select :event, events.map { |key, value| [key == "reschedule" ? "Alteração / Reagendamento" : value.first,key] }, {include_blank: "Todos os eventos",selected: @audit_filters.event} %></div>
+  <div><%= form.label :entity_type, "Entidade" %><%= form.select :entity_type, [["Agendamentos","Booking"],["Bloqueios","SlotBlock"], *(current_user.role == "admin" ? [["Usuários","User"]] : [])], {include_blank: "Todas",selected: @audit_filters.entity_type} %></div>
+  <div><%= form.label :actor_user_id, "Operador" %><%= form.select :actor_user_id, @audit_actors.map { |actor| [actor.name,actor.id] }, {include_blank: "Todos",selected: @audit_filters.actor_user_id} %></div>
+  <div><%= form.label :booking_protocol, "Protocolo exato do agendamento" %><%= form.text_field :booking_protocol, value: @audit_filters.booking_protocol, maxlength: 50 %></div>
+  <%= form.submit "Filtrar", class: "admin-button" %><%= link_to "Limpar filtros", admin_audit_events_path, class: "admin-text-link" %>
+<% end %>

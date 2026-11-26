@@ -1,0 +1,6 @@
+<% content_for :title,"Detalhes do usuário" %>
+<div class="admin-page-heading"><h1>Detalhes do usuário</h1><%= link_to "Voltar à lista",admin_users_path(@user_filters.query_parameters),class:"admin-button admin-button-secondary" %></div>
+<section class="admin-panel admin-detail"><h2><%= @user.name %></h2><dl>
+<dt>E-mail</dt><dd><%= @user.email %></dd><dt>Perfil</dt><dd><%= User::ROLES.fetch(@user.role) %></dd><dt>Status</dt><dd><%= @user.active ? "Ativo" : "Inativo" %></dd><dt>Data de cadastro</dt><dd><%= admin_recorded(@user.created_at) %></dd><dt>Desativado em</dt><dd><%= admin_recorded(@user.deactivated_at) %></dd><dt>Troca de senha obrigatória</dt><dd><%= @user.must_change_password ? "Sim" : "Não" %></dd>
+</dl><div class="admin-operation-actions"><%= link_to "Editar usuário",edit_admin_user_path(@user),class:"admin-button" %><%= link_to "Redefinir senha",password_reset_admin_user_path(@user),class:"admin-button admin-button-secondary" %><%= link_to @user.active ? "Desativar usuário" : "Ativar usuário",@user.active ? deactivation_admin_user_path(@user) : activation_admin_user_path(@user),class:"admin-button admin-button-secondary" %></div>
+<p>Alterações de e-mail, perfil, estado ou senha revogam as sessões aplicáveis. O usuário deverá autenticar-se novamente.</p></section>

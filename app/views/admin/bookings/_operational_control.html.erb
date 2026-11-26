@@ -1,0 +1,32 @@
+<section class="admin-panel admin-detail admin-detail-wide" id="operational-control">
+  <h2>Controle operacional</h2>
+  <% if @booking.status == "reagendamento" %>
+    <p class="admin-alert">Reagendamento obrigatório. <%= "O veículo não realizou check-in até o horário limite de entrada." if @booking.change_reason == ProcessNoShows::REASON %> É necessário selecionar uma nova data, doca e janela de horário. A posição abaixo é a originalmente agendada.</p>
+  <% end %>
+  <dl>
+    <dt>Status atual</dt><dd><span class="admin-status admin-state-<%= @booking.status %> <%= "admin-overdue" if @booking.operation_overdue? || @booking.late_arrival? %>"><%= admin_booking_status(@booking) %></span></dd>
+    <dt>Agendamento</dt><dd><%= l(@booking.booking_date) %> · <%= admin_window(@booking.slot_number).join(" – ") %> · Doca <%= "%02d" % @booking.dock_number %></dd>
+    <dt>Horário de check-in</dt><dd><%= admin_recorded(@booking.checkin_at) %></dd>
+    <dt>Horário de liberação</dt><dd><%= admin_recorded(@booking.released_at) %></dd>
+    <dt>Observação da liberação</dt><dd class="admin-multiline"><%= admin_recorded(@booking.release_remark) %></dd>
+    <dt><%= @booking.status == "cancelado" ? "Motivo do cancelamento" : "Motivo da alteração" %></dt><dd class="admin-multiline"><%= admin_recorded(@booking.change_reason) %></dd>
+  </dl>
+  <% if allowed?(:operations) && @booking.status == "agendado" %>
+    <div class="admin-operation-actions">
+      <% if @checkin_reason %>
+        <p><%= BookingCheckinPolicy::MESSAGES.fetch(@checkin_reason) %></p>
+        <button type="button" disabled class="admin-button">Registrar check-in</button>
+      <% else %>
+        <%= link_to "Registrar check-in", confirm_checkin_admin_booking_path(@booking, admin_context), class: "admin-button" %>
+      <% end %>
+    </div>
+  <% elsif allowed?(:operations) && @booking.status == "em_operacao" %>
+    <div class="admin-operation-actions"><%= link_to "Liberar doca", confirm_release_admin_booking_path(@booking, admin_context), class: "admin-button" %></div>
+  <% end %>
+  <% if allowed?(:operations) && @booking.schedule_change_allowed? %>
+    <div class="admin-operation-actions">
+      <%= link_to(@booking.status == "reagendamento" ? "Reagendar" : "Alterar agendamento", edit_admin_booking_path(@booking, admin_context), class: "admin-button admin-button-secondary") %>
+      <%= link_to "Cancelar agendamento", cancellation_admin_booking_path(@booking, admin_context), class: "admin-button admin-button-danger" %>
+    </div>
+  <% end %>
+</section>

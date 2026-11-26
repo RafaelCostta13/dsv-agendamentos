@@ -1,0 +1,94 @@
+<%= form_with scope: :booking, url: bookings_path, method: :post, local: true, class: "booking-form" do |form| %>
+  <%= form.hidden_field :request_id, value: @booking.request_id %>
+  <% if @booking.errors.any? %>
+    <div class="form-errors" role="alert" tabindex="-1">
+      <strong>Confira os dados do agendamento</strong>
+      <ul><% @booking.errors.each do |error| %><li><%= error.message %></li><% end %></ul>
+    </div>
+  <% end %>
+  <section class="form-section" aria-labelledby="contact-heading">
+    <h2 id="contact-heading"><span class="step">01</span>Quem está agendando?</h2>
+    <div class="field-grid">
+      <div class="field">
+        <%= form.label :contact_name, "Seu nome" %>
+        <%= form.text_field :contact_name, value: @booking.contact_name, placeholder: "Ex.: João Silva", required: true, minlength: 2, maxlength: 80, autocomplete: "name", aria: { describedby: "contact-name-error", invalid: @booking.errors[:contact_name].any? } %>
+        <span class="field-error" id="contact-name-error"><%= @booking.errors[:contact_name].join(" ") %></span>
+      </div>
+      <div class="field">
+        <%= form.label :company, "Empresa / transportadora" %>
+        <%= form.text_field :company, value: @booking.company, placeholder: "Nome da empresa", required: true, minlength: 2, maxlength: 100, autocomplete: "organization", aria: { describedby: "company-error", invalid: @booking.errors[:company].any? } %>
+        <span class="field-error" id="company-error"><%= @booking.errors[:company].join(" ") %></span>
+      </div>
+    </div>
+    <fieldset aria-describedby="operation-error">
+      <legend>Tipo de operação</legend>
+      <div class="choice-grid operations">
+        <% [["entrega", "Entrega", "Envio de mercadorias"], ["coleta", "Coleta", "Retirada de mercadorias"]].each do |value, label, detail| %>
+          <label class="choice-card operation-card">
+            <%= form.radio_button :operation, value, checked: @booking.operation == value, required: true %>
+            <span><strong><%= label %></strong><small><%= detail %></small></span>
+          </label>
+        <% end %>
+      </div>
+      <span class="field-error" id="operation-error"><%= @booking.errors[:operation].join(" ") %></span>
+    </fieldset>
+  </section>
+  <section class="form-section" aria-labelledby="vehicle-heading">
+    <h2 id="vehicle-heading"><span class="step">02</span>Nota fiscal e veículo</h2>
+    <div class="field">
+      <%= form.label :invoice, "Número da nota fiscal" %>
+      <%= form.text_field :invoice, value: @booking.invoice, placeholder: "Ex.: 000123456", inputmode: "numeric", pattern: "[0-9]{1,44}", required: true, maxlength: 44, aria: { describedby: "invoice-error", invalid: @booking.errors[:invoice].any? } %>
+      <span class="field-error" id="invoice-error"><%= @booking.errors[:invoice].join(" ") %></span>
+    </div>
+    <div class="field-grid">
+      <div class="field">
+        <%= form.label :plate, "Placa do veículo" %>
+        <%= form.text_field :plate, value: @booking.plate, placeholder: "ABC1D23 ou ABC1234", required: true, maxlength: 20, autocapitalize: "characters", spellcheck: false, aria: { describedby: "plate-error", invalid: @booking.errors[:plate].any? } %>
+        <span class="field-error" id="plate-error"><%= @booking.errors[:plate].join(" ") %></span>
+      </div>
+      <div class="field">
+        <%= form.label :vehicle_model, "Modelo do veículo" %>
+        <%= form.text_field :vehicle_model, value: @booking.vehicle_model, placeholder: "Ex.: Mercedes-Benz Atego 1719", required: true, minlength: 2, maxlength: 80, aria: { describedby: "vehicle-model-error", invalid: @booking.errors[:vehicle_model].any? } %>
+        <span class="field-error" id="vehicle-model-error"><%= @booking.errors[:vehicle_model].join(" ") %></span>
+      </div>
+    </div>
+  </section>
+  <section id="schedule" class="form-section" aria-labelledby="schedule-heading">
+    <h2 id="schedule-heading"><span class="step">03</span>Quando e em qual doca?</h2>
+    <fieldset aria-describedby="date-error">
+      <legend>Data do agendamento</legend>
+      <%= form.hidden_field :booking_date, value: @booking.booking_date&.iso8601 %>
+      <div class="choice-grid dates">
+        <% @dates.each_with_index do |date, index| %>
+          <%= button_tag type: "submit", name: "selected_date", value: date.iso8601, formaction: bookings_path(anchor: "schedule"), formnovalidate: true, class: "choice-card date-card", aria: { pressed: @booking.booking_date == date } do %>
+            <span><strong><%= ["Hoje", "Amanhã", "Depois de amanhã"][index] %></strong><small><%= date.strftime("%d/%m") %></small></span>
+          <% end %>
+        <% end %>
+      </div>
+      <span class="field-error" id="date-error"><%= @booking.errors[:booking_date].join(" ") %></span>
+    </fieldset>
+    <fieldset aria-describedby="dock-error">
+      <legend>Selecione a doca</legend>
+      <div class="choice-grid docks">
+        <% AgendaDefinition::DOCK_NUMBERS.each do |number| %>
+          <% operations = Booking::OPERATIONS.select { |operation| AgendaDefinition.dock_numbers_for(operation).include?(number) } %>
+          <label class="choice-card dock-card" data-operations="<%= operations.join(' ') %>">
+            <span class="dock-number"><%= "%02d" % number %></span>
+            <%= form.radio_button :dock_number, number, checked: @booking.dock_number.to_s == number.to_s, required: true %>
+          </label>
+        <% end %>
+      </div>
+      <span class="field-error" id="dock-error"><%= @booking.errors[:dock_number].join(" ") %></span>
+    </fieldset>
+    <div class="availability-update">
+      <p>Ao selecionar uma data, os horários são atualizados. Ao trocar a doca, use Atualizar horários. Seus dados serão mantidos.</p>
+      <%= button_tag "Atualizar horários", type: "submit", name: "intent", value: "availability", formaction: bookings_path(anchor: "schedule"), formnovalidate: true, class: "button-secondary" %>
+    </div>
+    <%= render "bookings/availability", form: form %>
+    <p class="operational-notice">Operação das <strong>08:00 às 17:48</strong>. Na última janela, a entrada deve ocorrer <strong>antes das 17:30</strong>.</p>
+  </section>
+  <div class="form-actions">
+    <%= form.submit "Confirmar agendamento", class: "button-primary", disabled: @availability.nil? %>
+    <p>A disponibilidade será verificada novamente na confirmação.</p>
+  </div>
+<% end %>

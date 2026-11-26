@@ -1,0 +1,65 @@
+x-rails-app: &rails_app
+  image: dsv-agendamentos-web
+  build:
+    context: .
+    args:
+      LOCAL_UID: ${LOCAL_UID:-1000}
+      LOCAL_GID: ${LOCAL_GID:-1000}
+  working_dir: /rails
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  environment:
+    RAILS_ENV: ${RAILS_ENV:-development}
+    POSTGRES_HOST: ${POSTGRES_HOST:-db}
+    POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+    POSTGRES_DB: ${POSTGRES_DB:-dsv_doca_agenda_development}
+    POSTGRES_USER: ${POSTGRES_USER:-dsv_doca_agenda}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no .env}
+    ADMIN_ACCESS_ENABLED: ${ADMIN_ACCESS_ENABLED:-false}
+  depends_on:
+    db:
+      condition: service_healthy
+  volumes:
+    - .:/rails
+    - rails_storage:/rails/storage
+
+services:
+  db:
+    image: postgres:17.12-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-dsv_doca_agenda_development}
+      POSTGRES_USER: ${POSTGRES_USER:-dsv_doca_agenda}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Crie .env a partir de .env.example e defina POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -h 127.0.0.1 -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  web:
+    <<: *rails_app
+    ports:
+      - "127.0.0.1:${RAILS_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD", "ruby", "-rnet/http", "-e", "exit(Net::HTTP.get_response(URI('http://127.0.0.1:3000/ready')).code == '200' ? 0 : 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  worker:
+    <<: *rails_app
+    command: ["bundle", "exec", "ruby", "bin/no-show-worker"]
+    restart: unless-stopped
+    stop_grace_period: 20s
+    healthcheck:
+      disable: true
+
+volumes:
+  postgres_data:
+  rails_storage:

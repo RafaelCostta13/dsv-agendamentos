@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+
+cd "$(dirname "$0")/.."
+# Run inside the web container. Database operations are deliberately explicit.
+bundle check
+bin/rails db:prepare
+RAILS_ENV=test bin/rails db:prepare

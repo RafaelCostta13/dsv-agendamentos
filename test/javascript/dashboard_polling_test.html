@@ -1,0 +1,125 @@
+<!doctype html><meta charset="utf-8"><title>RF009 automated tests</title>
+<style>body { min-height: 3000px } .admin-table-scroll { width: 500px; overflow: auto } table { width: 1500px } #dashboard-data { min-height: 1000px }</style>
+<header id="stable-header">Header</header><nav id="stable-sidebar">Sidebar</nav>
+<div id="dashboard-polling" data-refresh-url="/admin/dashboard/refresh" data-interval="5000" data-timeout="10000" data-max-retry="30000">
+<form id="dashboard-date-form"><input name="date" type="date" value="2026-11-25"><button>Atualizar</button></form>
+<div data-state="active"><span data-polling-status>Atualização automática ativa</span><time data-polling-time>14:00:00</time></div>
+<div id="dashboard-data"></div>
+</div><pre id="results">RUNNING</pre>
+<script>
+const nativeTimeout = window.setTimeout.bind(window);
+let tick = 0, sequence = 0, timers = new Map(), calls = [], results = [];
+window.setTimeout = (fn, delay) => { const id=++sequence; timers.set(id,{fn,at:tick+delay,delay}); return id; };
+window.clearTimeout = (id) => timers.delete(id);
+window.fetch = (url, options) => new Promise((resolve,reject) => calls.push({url:new URL(url),options,resolve,reject}));
+let hidden=false;
+Object.defineProperty(document,'hidden',{get:()=>hidden,configurable:true});
+const flush = () => new Promise(resolve=>nativeTimeout(resolve,0));
+function fragment(date='2026-11-25',label='14:00:05',marker='updated') {
+ const rows=Array.from({length:8},(_,r)=>'<tr>'+Array.from({length:10},(_,c)=>`<td><a href="/booking/${r}-${c}">${marker}</a></td>`).join('')+'</tr>').join('');
+ return `<div id="dashboard-data" data-date="${date}" data-updated-at="2026-11-25T${label}-03:00" data-updated-label="${label}">${'<section class="admin-indicator">1</section>'.repeat(5)}<div class="admin-table-scroll" tabindex="0"><table class="admin-matrix"><thead><tr>${'<th>Janela</th>'.repeat(11)}</tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+function put(html) { document.querySelector('#dashboard-data').replaceWith(new DOMParser().parseFromString(html,'text/html').querySelector('#dashboard-data')); }
+put(fragment('2026-11-25','14:00:00','initial'));
+async function advance(ms) {
+ const end=tick+ms;
+ while(true) {
+  const next=[...timers].filter(([,t])=>t.at<=end).sort((a,b)=>a[1].at-b[1].at)[0];
+  if(!next) break;
+  tick=next[1].at;timers.delete(next[0]);next[1].fn();await flush();
+ }
+ tick=end;await flush();
+}
+async function respond(index,html=fragment(),status=200,type='text/html') {
+ calls[index].resolve({ok:status===200,redirected:false,headers:new Headers({'Content-Type':type}),text:async()=>html});await flush();await flush();
+}
+function assert(value,message) { if(!value) throw new Error(message); }
+function state() { return document.querySelector('[data-polling-status]').parentElement.dataset.state; }
+async function test(name,fn) { await fn();results.push(name); }
+</script>
+<script src="../../app/assets/javascripts/dashboard_polling.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded',async()=>{
+try {
+ const root=document.querySelector('#dashboard-polling'),form=document.querySelector('form'),input=form.elements.date;
+ const header=document.querySelector('header'),sidebar=document.querySelector('nav');
+ await test('single five-second poll; no overlap; static nodes, focus and scroll survive',async()=>{
+  document.dispatchEvent(new Event('turbo:load'));window.dispatchEvent(new Event('pageshow'));
+  assert(calls.length===0,'initial snapshot must not trigger redundant request');
+  await advance(5000);assert(calls.length===1,'five-second grouped poll');
+  form.dispatchEvent(new Event('submit',{cancelable:true}));await advance(5000);
+  assert(calls.length===1,'slow request and manual refresh must not overlap');
+  const scroller=document.querySelector('.admin-table-scroll');
+  document.querySelector('td a').focus();scroller.scrollLeft=220;window.scrollTo(0,350);const y=scrollY;
+  await respond(0);
+  assert(document.querySelector('header')===header&&document.querySelector('nav')===sidebar,'static nodes replaced');
+  assert(document.querySelector('form')===form,'date form replaced');
+  assert(document.querySelector('.admin-table-scroll').scrollLeft===220&&scrollY===y,'scroll lost: '+document.querySelector('.admin-table-scroll').scrollLeft+'/'+scrollY+' expected 220/'+y);
+  assert(document.activeElement.getAttribute('href')==='/booking/0-0','focus lost');
+  assert(state()==='active'&&document.querySelector('time').textContent==='14:00:05','successful reference');
+ });
+ await test('date changes immediately; obsolete response cannot overwrite the latest date',async()=>{
+  input.value='2026-11-26';input.dispatchEvent(new Event('change'));const older=calls.length-1;
+  input.value='2026-11-27';input.dispatchEvent(new Event('change'));const latest=calls.length-1;
+  assert(calls[older].options.signal.aborted,'obsolete request not canceled');
+  assert(calls[latest].url.searchParams.get('date')==='2026-11-27','wrong selected date');
+  await respond(latest,fragment('2026-11-27','14:00:10','latest'));
+  await respond(older,fragment('2026-11-26','14:00:09','obsolete'));
+  assert(document.querySelector('#dashboard-data').dataset.date==='2026-11-27','stale date committed');
+ });
+ await test('HTTP errors preserve snapshot and time; exponential retry caps at thirty seconds',async()=>{
+  const snapshot=document.querySelector('#dashboard-data'),time=document.querySelector('time').textContent;
+  for(const delay of [5000,10000,20000,30000]) {
+   form.dispatchEvent(new Event('submit',{cancelable:true}));await respond(calls.length-1,'failure',503);
+   assert(state()==='failed'&&document.querySelector('#dashboard-data')===snapshot,'failed snapshot replaced');
+   assert(document.querySelector('time').textContent===time,'failed reference changed');
+   assert([...timers.values()].some(t=>t.delay===delay),'wrong retry delay '+delay);
+  }
+  form.dispatchEvent(new Event('submit',{cancelable:true}));await respond(calls.length-1,fragment('2026-11-27','14:00:20'));
+  assert(state()==='active'&&[...timers.values()].some(t=>t.delay===5000),'recovery did not reset interval');
+ });
+ await test('timeout cancels the request and rejects a late completion',async()=>{
+  await advance(5000);const index=calls.length-1;
+  await advance(10000);
+  assert(calls[index].options.signal.aborted&&state()==='failed','timeout not handled');
+  await respond(index,fragment('2026-11-27','14:00:25','too-late'));
+  assert(document.querySelector('time').textContent==='14:00:20','timed-out result applied');
+ });
+ await test('incomplete HTML, wrong dates, non-HTML and network errors keep last data',async()=>{
+  const snapshot=document.querySelector('#dashboard-data');
+  for(const [body,type] of [['<div id="dashboard-data"></div>','text/html'],[fragment('2026-11-26'),'text/html'],['{}','application/json']]) {
+   form.dispatchEvent(new Event('submit',{cancelable:true}));await respond(calls.length-1,body,200,type);
+   assert(state()==='failed'&&document.querySelector('#dashboard-data')===snapshot,'invalid data committed');
+  }
+  form.dispatchEvent(new Event('submit',{cancelable:true}));calls.at(-1).reject(new TypeError('network'));await flush();
+  assert(state()==='failed','network failure missing');
+ });
+ await test('hidden tabs cancel, pause and immediately refresh on visibility restoration',async()=>{
+  form.dispatchEvent(new Event('submit',{cancelable:true}));const pending=calls.at(-1);
+  hidden=true;document.dispatchEvent(new Event('visibilitychange'));const count=calls.length;
+  await advance(60000);assert(calls.length===count&&state()==='paused','hidden tab polling');
+  assert(pending.options.signal.aborted,'hidden request not canceled');
+  hidden=false;document.dispatchEvent(new Event('visibilitychange'));assert(calls.length===count+1,'no immediate resume');
+  await respond(calls.length-1,fragment('2026-11-27','14:00:30'));assert(state()==='active','failed alert not cleared after success');
+ });
+ await test('pointer interaction postpones replacement and retains the snapshot until click completes',async()=>{
+  root.dispatchEvent(new Event('pointerdown'));form.dispatchEvent(new Event('submit',{cancelable:true}));
+  const old=document.querySelector('#dashboard-data');await respond(calls.length-1,fragment('2026-11-27','14:00:35'));
+  assert(document.querySelector('#dashboard-data')===old,'replacement interrupted pointer');
+  window.dispatchEvent(new Event('pointerup'));await advance(0);
+  assert(document.querySelector('time').textContent==='14:00:35','deferred snapshot missing');
+ });
+ await test('Turbo cache, page exit and repeated lifecycle events never leave duplicate timers',async()=>{
+  document.dispatchEvent(new Event('turbo:before-cache'));const count=calls.length;await advance(60000);
+  assert(calls.length===count&&timers.size===0,'polling survived navigation');
+  document.dispatchEvent(new Event('turbo:load'));document.dispatchEvent(new Event('turbo:load'));
+  await advance(5000);assert(calls.length===count+1,'duplicated controller');
+  window.dispatchEvent(new Event('pagehide'));assert(calls.at(-1).options.signal.aborted,'pagehide kept request');
+  assert(timers.size===0,'pagehide kept timers');
+  root.remove();document.dispatchEvent(new Event('turbo:load'));await advance(60000);
+  assert(calls.length===count+1,'polling on a different page');
+ });
+ document.querySelector('#results').textContent=JSON.stringify({passed:results.length,tests:results});
+} catch(error) {document.querySelector('#results').textContent=JSON.stringify({passed:results.length,error:error.message,stack:error.stack});}
+});
+</script>

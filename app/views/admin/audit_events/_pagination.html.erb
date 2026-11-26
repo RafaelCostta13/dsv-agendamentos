@@ -1,0 +1,4 @@
+<nav class="admin-pagination" aria-label="Paginação do histórico"><span>Página <%= audit_page.page %> de <%= audit_page.total_pages %> · <%= audit_page.total_count %> eventos</span><div>
+<% if audit_page.page > 1 %><%= link_to "Anterior", path.call(audit_page.page-1), class:"admin-button admin-button-secondary", rel:"prev" %><% end %>
+<% if audit_page.page < audit_page.total_pages %><%= link_to "Próxima", path.call(audit_page.page+1), class:"admin-button admin-button-secondary", rel:"next" %><% end %>
+</div></nav>

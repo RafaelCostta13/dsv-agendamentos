@@ -1,0 +1,6 @@
+<% errors = @selection&.errors || [] %>
+<% if errors.any? %><div class="admin-alert" role="alert"><% errors.each do |error| %><p><%= error.message %></p><% end %></div><% end %>
+<% if @unblock_operation&.errors&.any? %><div class="admin-alert" role="alert"><% @unblock_operation.errors.each do |error| %><p><%= error.message %></p><% end %></div><% end %>
+<% if @block_operation&.conflicts&.any? %>
+  <ul class="admin-conflicts"><% @block_operation.conflicts.each do |dock, slot| %><li><%= l(@selection.blocked_date) %> · Doca <%= "%02d" % dock %> · <%= admin_window(slot).join(" – ") %></li><% end %></ul>
+<% end %>

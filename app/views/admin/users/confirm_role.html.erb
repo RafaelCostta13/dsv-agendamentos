@@ -1,0 +1,7 @@
+<% content_for :title,"Confirmar alteração de perfil" %>
+<div class="admin-page-heading"><h1>Confirmar alteração de perfil</h1></div>
+<section class="admin-panel admin-detail"><p>Confirme a alteração de perfil de <strong><%= @user.name %></strong>.</p><dl><dt>Perfil atual</dt><dd><%= User::ROLES.fetch(@previous_role) %></dd><dt>Novo perfil</dt><dd><%= User::ROLES.fetch(@user.role) %></dd></dl>
+<%= form_with model:[:admin,@user],class:"admin-operation-form" do |form| %>
+<% %i[name email role].each do |field| %><%= form.hidden_field field %><% end %><%= form.hidden_field :lock_version,value:@submitted_version %>
+<%= button_tag "Confirmar alteração",name:"intent",value:"confirm_role",class:"admin-button" %><%= link_to "Voltar",edit_admin_user_path(@user),class:"admin-button admin-button-secondary" %>
+<% end %></section>

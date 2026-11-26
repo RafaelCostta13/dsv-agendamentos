@@ -1,0 +1,10 @@
+<% content_for :title, "Confirmar bloqueio" %>
+<div class="admin-page-heading"><div><p class="admin-eyebrow">DISPONIBILIDADE OPERACIONAL</p><h1>Confirmar bloqueio</h1><p>Você está prestes a bloquear <%= @selection.positions.size %> posições da agenda para a data selecionada. Deseja continuar?</p></div></div>
+<section class="admin-panel admin-detail"><h2>Resumo da operação</h2><dl>
+  <dt>Data</dt><dd><%= l(@selection.blocked_date) %></dd><dt>Docas selecionadas</dt><dd><%= @selection.dock_numbers.size %> · <%= @selection.dock_numbers.map { |dock| "%02d" % dock }.join(", ") %></dd><dt>Janelas selecionadas</dt><dd><%= @selection.slot_numbers.size %></dd><dt>Total de posições</dt><dd><%= @selection.positions.size %></dd><dt>Já bloqueadas</dt><dd><%= @block_operation.existing_count %> (serão preservadas)</dd><dt>Motivo</dt><dd><%= @selection.reason.presence || "Não informado" %></dd>
+</dl>
+<%= form_with scope: :slot_block, url: admin_slot_blocks_path(admin_context), method: :post, class: "admin-operation-form" do |form| %>
+  <%= form.hidden_field :blocked_date, value: @selection.blocked_date.iso8601 %><%= form.hidden_field :reason, value: @selection.reason %>
+  <% @selection.dock_numbers.each do |dock| %><%= hidden_field_tag "slot_block[dock_numbers][]", dock %><% end %><% @selection.slot_numbers.each do |slot| %><%= hidden_field_tag "slot_block[slot_numbers][]", slot %><% end %>
+  <div class="admin-operation-actions"><%= form.button "Voltar", name: "selection_command", value: "back", class: "admin-button admin-button-secondary" %><%= form.button "Confirmar bloqueio", name: "intent", value: "confirm", class: "admin-button" %></div>
+<% end %></section>

@@ -1,0 +1,19 @@
+<% content_for :title, "Confirmar alteração" %>
+<div class="admin-page-heading"><div><p class="admin-eyebrow">CONFIRMAÇÃO DA RESERVA</p><h1>Confirmar <%= @booking.status == "reagendamento" ? "reagendamento" : "alteração" %></h1><p>Compare a posição atual com a posição selecionada.</p></div></div>
+<div class="admin-detail-grid">
+  <%= render "current_booking" %>
+  <section class="admin-panel admin-detail"><h2>Novo agendamento</h2><dl>
+    <dt>Data</dt><dd><%= l(@change.booking_date) %></dd>
+    <dt>Doca</dt><dd><%= "%02d" % @change.position.fetch(:dock_number) %></dd>
+    <dt>Horário</dt><dd><%= admin_window(@change.position.fetch(:slot_number)).join(" – ") %></dd>
+    <dt>Motivo</dt><dd class="admin-multiline"><%= @change.change_reason.presence || "Nenhuma alteração foi realizada." %></dd>
+  </dl></section>
+</div>
+<% if @unchanged %><p class="admin-notice">Nenhuma alteração foi realizada.</p><% end %>
+<%= form_with scope: :booking, url: reschedule_admin_booking_path(@booking, admin_context), method: :patch, class: "admin-operation-form" do |form| %>
+  <% BookingChangeRequest::FIELDS.each do |field| %><%= form.hidden_field field, value: @change.public_send(field) %><% end %>
+  <div class="admin-operation-actions">
+    <%= form.button "Voltar", name: "intent", value: "availability", formnovalidate: true, class: "admin-button admin-button-secondary" %>
+    <%= form.button "Confirmar alteração", name: "intent", value: "confirm", class: "admin-button" %>
+  </div>
+<% end %>

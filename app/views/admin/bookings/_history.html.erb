@@ -1,0 +1,11 @@
+<section class="admin-panel admin-detail" id="booking-history"><h2>Histórico do agendamento</h2>
+<% if @history.events.empty? %><p>Nenhum evento registrado para este agendamento.</p><% else %>
+<ol class="admin-audit-timeline">
+<% @history.events.each do |event| %><li><time datetime="<%= event.created_at.iso8601 %>"><%= l(event.created_at.in_time_zone) %></time><h3><%= render "admin/audit_events/badge", event:event %></h3><p><%= audit_origin(event) %></p>
+<% if event.reason.present? %><p class="admin-multiline"><strong>Motivo:</strong> <%= event.reason %></p><% end %>
+<%= render "admin/audit_events/comparison", event:event %>
+<p><%= link_to "Visualizar detalhes do evento", admin_audit_event_path(event), class:"admin-text-link" %></p>
+</li><% end %></ol>
+<% end %>
+<%= render "admin/audit_events/pagination", audit_page:@history, path: ->(page) { admin_booking_path(@booking,admin_context.merge(history_page:page,anchor:"booking-history")) } %>
+</section>

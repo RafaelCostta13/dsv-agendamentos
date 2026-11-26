@@ -1,0 +1,6 @@
+<% content_for :head do %><%= stylesheet_link_tag "receipt" %><% end %>
+<div class="booking-page confirmation-page">
+  <%= render "bookings/receipt", booking: @booking, qr_path: booking_confirmation_path(format: :png) %>
+  <div class="receipt-navigation"><%= link_to "Realizar novo agendamento", new_booking_path, class: "button-primary" %></div>
+  <%= render "bookings/footer" %>
+</div>

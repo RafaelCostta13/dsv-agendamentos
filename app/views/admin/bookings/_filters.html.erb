@@ -1,0 +1,11 @@
+<%= form_with url: admin_bookings_path, method: :get, class: "admin-filters" do |form| %>
+  <div><%= form.label :date, "Data agendada" %><%= form.date_field :date, value: @filters.period? ? nil : @filters.parsed_date&.iso8601, min: "0001-01-01", max: "9999-12-31" %></div>
+  <div><%= form.label :start_date, "Data inicial" %><%= form.date_field :start_date, value: @filters.start_date, min: "0001-01-01", max: "9999-12-31" %></div>
+  <div><%= form.label :end_date, "Data final" %><%= form.date_field :end_date, value: @filters.end_date, min: "0001-01-01", max: "9999-12-31" %></div>
+  <div><%= form.label :dock_number, "Doca" %><%= form.select :dock_number, AgendaDefinition::DOCK_NUMBERS.map { |dock| ["Doca #{'%02d' % dock}", dock.to_s] }, { include_blank: "Todas", selected: @filters.dock_number } %></div>
+  <div><%= form.label :operation, "Operação" %><%= form.select :operation, Booking::OPERATIONS.map { |operation| [admin_operation_label(operation), operation] }, { include_blank: "Todas", selected: @filters.operation } %></div>
+  <div><%= form.label :status, "Status" %><%= form.select :status, Booking::STATUSES.map { |status| [admin_state_label(status), status] }, { include_blank: "Todos", selected: @filters.status } %></div>
+  <%= form.submit "Filtrar", class: "admin-button" %>
+  <%= link_to "Limpar filtros", admin_bookings_path, class: "admin-text-link" %>
+<% end %>
+<p class="admin-export-help">O período considera a data agendada e tem prioridade sobre a data individual. A exportação inclui todos os resultados filtrados, até 20 mil agendamentos, em horário de Brasília.</p>

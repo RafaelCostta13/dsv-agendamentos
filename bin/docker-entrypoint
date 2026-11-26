@@ -1,0 +1,9 @@
+#!/bin/sh
+set -eu
+
+# Database preparation is an explicit, single command; never run concurrent migrations here.
+if [ "${1:-}" = "bundle" ] && [ "${2:-}" = "exec" ] && [ "${3:-}" = "puma" ]; then
+  rm -f /rails/tmp/pids/server.pid
+fi
+
+exec "$@"

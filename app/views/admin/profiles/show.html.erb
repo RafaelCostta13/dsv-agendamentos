@@ -1,0 +1,10 @@
+<% content_for :title, "Meu perfil" %>
+<div class="admin-page-heading"><div><p class="admin-eyebrow">MINHA CONTA</p><h1>Meu perfil</h1><p>Consulte os dados da sua conta administrativa.</p></div><%= link_to "Alterar senha", edit_password_path, class: "admin-button" %></div>
+<section class="admin-panel admin-detail"><h2>Dados da conta</h2><dl>
+  <dt>Nome completo</dt><dd><%= current_user.name %></dd>
+  <dt>E-mail</dt><dd><%= current_user.email %></dd>
+  <dt>Perfil de acesso</dt><dd><%= User::ROLES.fetch(current_user.role) %></dd>
+  <dt>Estado</dt><dd><%= current_user.active? ? "Ativo" : "Inativo" %></dd>
+  <dt>Data de cadastro</dt><dd><%= l(current_user.created_at.in_time_zone) %></dd>
+  <dt>Última alteração de senha</dt><dd><%= current_user.password_changed_at ? l(current_user.password_changed_at.in_time_zone) : "Não registrada" %></dd>
+</dl></section>

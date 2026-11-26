@@ -1,0 +1,30 @@
+<% content_for :title, "Bloqueios de docas e horários" %>
+<div class="admin-page-heading"><div><p class="admin-eyebrow">DISPONIBILIDADE OPERACIONAL</p><h1>Bloqueios de docas e horários</h1><p>Gerencie a disponibilidade operacional por data, doca e janela.</p></div></div>
+<%= render "errors" %>
+<% if allowed?(:blocks_write) %><section class="admin-panel admin-detail" id="block-selection"><h2>Novo bloqueio</h2>
+  <%= form_with scope: :slot_block, url: admin_slot_blocks_path(admin_context.merge(anchor: "block-selection")), method: :post, class: "admin-operation-form admin-change-form" do |form| %>
+    <%= form.hidden_field :blocked_date, value: @selection.blocked_date&.iso8601 %>
+    <fieldset><legend>Data do bloqueio</legend><div class="admin-position-grid admin-position-dates">
+      <% @dates.each_with_index do |date,index| %>
+        <%= button_tag type: "submit", name: "selected_date", value: date.iso8601, class: "admin-position-choice", formnovalidate: true, aria: { pressed: @selection.blocked_date == date } do %><strong><%= ["Hoje", "Amanhã", "Depois de amanhã"][index] %></strong><span><%= l(date) %></span><% end %>
+      <% end %>
+    </div></fieldset>
+    <fieldset><legend>Selecionar docas</legend><div class="admin-selection-tools">
+      <%= form.button "Selecionar todas", name: "selection_command", value: "all_docks", class: "admin-button admin-button-secondary", formnovalidate: true %>
+      <%= form.button "Desmarcar todas", name: "selection_command", value: "clear_docks", class: "admin-button admin-button-secondary", formnovalidate: true %>
+    </div><div class="admin-position-grid admin-position-docks">
+      <% AgendaDefinition::DOCK_NUMBERS.each do |dock| %><label class="admin-position-choice"><%= check_box_tag "slot_block[dock_numbers][]", dock, @selection.dock_numbers.include?(dock), id: "block-dock-#{dock}" %><span>Doca <%= "%02d" % dock %></span></label><% end %>
+    </div></fieldset>
+    <fieldset><legend>Selecionar horários</legend><div class="admin-selection-tools">
+      <%= form.button "Selecionar todos os horários", name: "selection_command", value: "all_slots", class: "admin-button admin-button-secondary", formnovalidate: true %>
+      <%= form.button "Desmarcar todos os horários", name: "selection_command", value: "clear_slots", class: "admin-button admin-button-secondary", formnovalidate: true %>
+    </div><div class="admin-position-grid admin-position-slots">
+      <% eligible = @selection.eligible_slots %>
+      <% AgendaDefinition::SLOT_WINDOWS.each do |slot,times| %><label class="admin-position-choice <%= "admin-position-unavailable" unless eligible.include?(slot) %>"><%= check_box_tag "slot_block[slot_numbers][]", slot, @selection.slot_numbers.include?(slot), id: "block-slot-#{slot}", disabled: !eligible.include?(slot) %><span><strong><%= times.join(" – ") %></strong><span><%= eligible.include?(slot) ? "Elegível" : "Horário não elegível" %></span></span></label><% end %>
+    </div></fieldset>
+    <%= form.label :reason, "Motivo do bloqueio (opcional)" %><%= form.text_area :reason, value: @selection.reason, rows: 3, maxlength: 250 %>
+    <p>O resumo definitivo será apresentado antes da confirmação.</p>
+    <div class="admin-operation-actions"><%= form.button "Revisar bloqueio", name: "intent", value: "review", class: "admin-button" %></div>
+  <% end %>
+</section><% end %>
+<%= render "list" %>

@@ -1,0 +1,9 @@
+<% content_for :title, "Confirmar desbloqueio" %>
+<div class="admin-page-heading"><div><p class="admin-eyebrow">DISPONIBILIDADE OPERACIONAL</p><h1>Confirmar desbloqueio</h1><p>Você selecionou <%= @unblock_operation.blocks.size %> bloqueios. Deseja desbloquear essas posições?</p></div></div>
+<section class="admin-panel"><div class="admin-table-scroll" role="region" tabindex="0" aria-label="Posições selecionadas para desbloqueio"><table class="admin-blocks-table"><thead><tr><th>Data</th><th>Doca</th><th>Horário</th><th>Motivo original</th></tr></thead><tbody>
+<% @unblock_operation.blocks.each do |block| %><tr><td><%= l(block.blocked_date) %></td><td><%= "%02d" % block.dock_number %></td><td><%= admin_window(block.slot_number).join(" – ") %></td><td><%= block.reason.presence || "Não informado" %></td></tr><% end %>
+</tbody></table></div></section>
+<%= form_with url: (@single_id ? admin_slot_block_path(@single_id, admin_context) : bulk_unblock_admin_slot_blocks_path(admin_context)), method: (@single_id ? :delete : :post) do |form| %>
+  <% @unblock_operation.tokens.each do |token| %><%= hidden_field_tag "block_tokens[]", token %><% end %>
+  <div class="admin-operation-actions"><%= link_to "Voltar", admin_slot_blocks_path(admin_context.merge(anchor: "existing-blocks")), class: "admin-button admin-button-secondary" %><%= form.submit "Confirmar desbloqueio", class: "admin-button" %></div>
+<% end %>

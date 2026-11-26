@@ -1,0 +1,27 @@
+<% content_for :title, "Agendamentos" %>
+<div class="admin-page-heading"><div><p class="admin-eyebrow">CONSULTA OPERACIONAL</p><h1>Agendamentos</h1><p>Consulte as reservas e seu histórico de estados.</p></div><div class="admin-operation-actions"><%= link_to export_admin_bookings_path(@filters.query_parameters.merge(format: :xlsx)), class: "admin-button admin-button-export", data: { turbo: false } do %><span aria-hidden="true">⇩</span> Exportar Excel<% end %><%= link_to "Atualizar", admin_bookings_path(@filters.query_parameters.merge(page: @page)), class: "admin-button admin-button-secondary" %></div></div>
+<% if @export_error %><p class="admin-alert" role="alert"><%= @export_error %></p><% end %>
+<section class="admin-panel">
+  <%= render "filters" %>
+  <div class="admin-panel-heading"><h2>Reservas encontradas <span class="admin-count"><%= @total_count %></span></h2><span>Até <%= Admin::BookingsController::PAGE_SIZE %> registros por página</span></div>
+  <% if @bookings.empty? %>
+    <div class="admin-empty"><h3>Nenhum agendamento encontrado</h3><p>Não há reservas para os filtros selecionados.</p></div>
+  <% else %>
+    <div class="admin-table-scroll" tabindex="0" role="region" aria-label="Lista de agendamentos, com rolagem horizontal">
+      <table class="admin-bookings-table">
+        <caption class="admin-sr-only">Agendamentos encontrados no PostgreSQL</caption>
+        <thead><tr><% ["Protocolo", "Data agendada", "Horário", "Doca", "Operação", "Responsável", "Empresa / transportadora", "Nota fiscal", "Placa", "Modelo do veículo", "Status", "Ação"].each do |heading| %><th scope="col"><%= heading %></th><% end %></tr></thead>
+        <tbody><% @bookings.each do |booking| %><tr>
+          <td class="admin-protocol"><%= booking.protocol %></td><td><%= l(booking.booking_date) %></td><td class="admin-nowrap"><%= admin_window(booking.slot_number).join(" – ") %></td><td><%= "%02d" % booking.dock_number %></td><td><%= admin_operation_label(booking.operation) %></td>
+          <td><%= booking.contact_name %></td><td><%= booking.company %></td><td><%= booking.invoice %></td><td class="admin-nowrap"><%= booking.plate %></td><td><%= booking.vehicle_model %></td>
+          <td><span class="admin-status admin-state-<%= booking.status %> <%= "admin-overdue" if booking.operation_overdue? || booking.late_arrival? %>"><%= admin_booking_status(booking) %></span><% if booking.status == "reagendamento" %><p class="admin-multiline"><%= booking.change_reason %></p><% end %></td><td><%= link_to "Visualizar", admin_booking_path(booking, admin_context), class: "admin-text-link", aria: { label: "Visualizar reserva #{booking.protocol}" } %></td>
+        </tr><% end %></tbody>
+      </table>
+    </div>
+  <% end %>
+  <nav class="admin-pagination" aria-label="Paginação de agendamentos">
+    <span>Página <%= @page %> de <%= @total_pages %> · <%= @total_count %> registros</span>
+    <div><% if @page > 1 %><%= link_to "Anterior", admin_bookings_path(@filters.query_parameters.merge(page: @page - 1)), class: "admin-button admin-button-secondary", rel: "prev" %><% end %>
+    <% if @page < @total_pages %><%= link_to "Próxima", admin_bookings_path(@filters.query_parameters.merge(page: @page + 1)), class: "admin-button admin-button-secondary", rel: "next" %><% end %></div>
+  </nav>
+</section>

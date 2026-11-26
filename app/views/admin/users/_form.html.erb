@@ -1,0 +1,15 @@
+<%= render "errors" %>
+<%= form_with model: [:admin,@user], class:"admin-operation-form admin-user-form" do |form| %>
+  <% unless @user.new_record? %><%= form.hidden_field :lock_version,value:@submitted_version || @user.lock_version %><% end %>
+  <div><%= form.label :name,"Nome completo" %><%= form.text_field :name,required:true,minlength:2,maxlength:100,autocomplete:"name" %></div>
+  <div><%= form.label :email,"E-mail" %><%= form.email_field :email,required:true,maxlength:254,autocomplete:"email" %></div>
+  <div><%= form.label :role,"Perfil de acesso" %><%= form.select :role,User::ROLES.map { |value,label| [label,value] },{},required:true %></div>
+  <dl class="admin-user-roles"><% User::ROLES.each do |value,label| %><dt><%= label %></dt><dd><%= User::ROLE_DESCRIPTIONS.fetch(value) %></dd><% end %></dl>
+  <% if @user.new_record? %>
+    <div><%= form.label :active,"Status" %><%= form.select :active,[["Ativo","true"],["Inativo","false"]],{selected:@user.active.to_s} %></div>
+    <div><%= form.label :password,"Senha inicial" %><%= form.password_field :password,value:nil,required:true,minlength:12,autocomplete:"new-password" %></div>
+    <div><%= form.label :password_confirmation,"Confirmação da senha" %><%= form.password_field :password_confirmation,value:nil,required:true,minlength:12,autocomplete:"new-password" %></div>
+    <p>Mínimo de 12 caracteres, máximo de 72 bytes. Espaços são preservados. Comunique a senha inicial por meio seguro, fora da aplicação.</p>
+  <% end %>
+  <div class="admin-operation-actions"><%= form.submit @user.new_record? ? "Cadastrar usuário" : "Salvar alterações",class:"admin-button" %><%= link_to "Voltar",admin_users_path,class:"admin-button admin-button-secondary" %></div>
+<% end %>

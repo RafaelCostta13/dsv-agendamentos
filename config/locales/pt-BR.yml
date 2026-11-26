@@ -1,0 +1,12 @@
+pt-BR:
+  app:
+    name: DSV Doca Agenda
+    environment: Ambiente de desenvolvimento
+    initialized: Aplicação inicializada com sucesso.
+  date:
+    formats:
+      default: "%d/%m/%Y"
+    order: [day, month, year]
+  time:
+    formats:
+      default: "%d/%m/%Y %H:%M:%S"
