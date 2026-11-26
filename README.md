@@ -139,11 +139,11 @@ Os volumes sobrevivem a restart, down, recriação dos containers e rebuild. **N
 
 Em ambiente operacional, crie uma tabela descartável com nome exclusivo, por exemplo `rf001_persistence_probe_20261125`, após confirmar que esse nome está livre. Insira um marcador sem dados reais, execute `docker compose down` e `docker compose up -d`, consulte o marcador e remova somente a tabela de teste. Não remova volumes nem use tabelas de negócio.
 
-## Segurança e produção futura
+## Segurança e produção
 
 CSRF e escaping Rails são preservados. A CSP permite recursos locais e bloqueia scripts (`script-src 'none'`), objetos e frames ancestrais. Os filtros Rails ocultam parâmetros sensíveis dos logs; o healthcheck não retorna mensagens de exceção. Não há credenciais criptografadas necessárias nesta etapa. `.env`, chaves privadas, uploads e credenciais locais não entram no Git nem na imagem.
 
-Em produção: Internet → **Nginx instalado diretamente na VPS** → Puma/Rails em Docker → PostgreSQL em Docker. O Nginx não integra o Compose. HTTPS, domínio e implantação serão tratados em requisito próprio; este Compose é exclusivamente de desenvolvimento e publica web apenas em loopback.
+Em produção: Internet → **Nginx instalado diretamente na VPS** → Puma/Rails em Docker → PostgreSQL em Docker. O Nginx não integra o Compose. `compose.production.yaml` e `Dockerfile.production` são independentes do ambiente local. Consulte [docs/deploy](docs/deploy/README.md) para preparação manual da VPS, proxy, backup e rollback. Nenhum deploy é executado pelo repositório.
 
 
 ## Estrutura do banco — RF002
@@ -172,7 +172,7 @@ Consulte a [ADR 0016](docs/adr/0016-gerenciamento-seguro-de-usuarios.md) e a [es
 
 ## Formulário público — RF003
 
-Após atualizar o código, reinicie web (`docker compose restart web`) para carregar os novos diretórios de forms/services. Acesse `http://localhost:3000/agendar`. Preencha os dados, selecione data/doca e use **Atualizar horários** para consultar as janelas; a confirmação revalida disponibilidade e horário no servidor. As oito docas são provisoriamente oferecidas para ambas as operações. Não há autenticação ou publicação operacional em produção.
+Após atualizar o código, reinicie web (`docker compose restart web`) para carregar os novos diretórios de forms/services. Acesse `http://localhost:3000/agendar`. Preencha os dados, selecione data/doca e use **Atualizar horários** para consultar as janelas; a confirmação revalida disponibilidade e horário no servidor. Entrega usa docas 1–3 e coleta usa docas 4–8. Não há autenticação na área pública.
 
 A [ADR 0006](docs/adr/0006-formulario-publico-e-criacao-transacional.md) descreve idempotência, locks compartilhados e confirmação. O logo oficial `DSV_Logo.svg` foi integrado ao cabeçalho. A suíte PostgreSQL inclui regressões de disponibilidade por data, concorrência, idempotência e segurança do formulário público.
 
@@ -185,7 +185,7 @@ Após atualizar/reconstruir a imagem, execute `docker compose up -d` e acesse:
 - `http://localhost:3000/admin/bookings`: lista com filtros GET por data, doca, operação e status, até 25 reservas por página.
 - `/admin/bookings/:id`: detalhes e retorno ao contexto da consulta.
 
-O painel permite consulta e as ações de check-in/liberação do RF005, sem login. As rotas são carregadas apenas em development/test; não existem em produção. Mantenha o acesso local em loopback até a implementação de autenticação/autorização. A atualização é manual, pelo botão **Atualizar**.
+O painel permite consulta e ações operacionais após login. Em produção, as rotas ficam desabilitadas por `ADMIN_ACCESS_ENABLED=false` até autorização e homologação; autenticação e matriz de permissões permanecem ativas quando habilitadas. A atualização é manual, pelo botão **Atualizar**.
 
 `Admin::Dashboard` usa duas consultas agrupadas para reservas e bloqueios. Reservas agendadas, em operação e liberadas compõem os indicadores; canceladas e em reagendamento aparecem somente na lista. Disponibilidade reutiliza a regra pública de data/horizonte/início de janela. Os dados carregados alimentam a matriz e os indicadores, sem consultas por célula. Sobreposições entre reserva ativa e bloqueio são sinalizadas como inconsistência.
 
@@ -198,7 +198,7 @@ Em **Agendamentos → Visualizar → Controle operacional**, selecione **Registr
 
 Para uma reserva **Em operação**, selecione **Liberar doca**, informe a observação de 3 a 500 caracteres e confirme. A liberação funciona após o expediente e em outra data. Ela libera a doca física e mantém a capacidade da janela original consumida. Operações em andamento após o fim da janela recebem o destaque **Horário excedido**, sem encerramento automático.
 
-Os comandos são PATCH `/admin/bookings/:id/checkin` e `/admin/bookings/:id/release`, precedidos por páginas de confirmação GET. Reserva e auditoria são atualizadas na mesma transação. Conflitos de versão exigem consultar novamente os detalhes. Datas e horários efetivos são definidos no servidor, em horário de Brasília. As ações não existem em produção e não substituem autenticação/autorização, que permanecem fora deste requisito.
+Os comandos são PATCH `/admin/bookings/:id/checkin` e `/admin/bookings/:id/release`, precedidos por páginas de confirmação GET. Reserva e auditoria são atualizadas na mesma transação. Conflitos de versão exigem consultar novamente os detalhes. Datas e horários efetivos são definidos no servidor, em horário de Brasília. Em produção, o acesso administrativo depende da configuração explícita e autenticação/autorização do RF016.
 
 Consulte a [ADR 0008](docs/adr/0008-checkin-e-liberacao-transacionais.md) para concorrência, auditoria e validação.
 
@@ -336,7 +336,7 @@ Crie o primeiro administrador em terminal interativo, caso ainda não exista:
 docker compose exec web bin/rails users:bootstrap_admin
 ```
 
-Em produção, `ADMIN_ACCESS_ENABLED` permanece `false` por padrão. Não altere até concluir RF017/RF018, configurar HTTPS, `SECRET_KEY_BASE`, hosts e proxies confiáveis no Rails/Nginx e homologar cookies Secure/HSTS. O Nginx deve sobrescrever cabeçalhos de IP encaminhados e somente seu endereço deve ser confiável para `remote_ip`. A aplicação não foi implantada.
+Em produção, `ADMIN_ACCESS_ENABLED` permanece `false` por padrão. Habilite somente após homologar o roteiro do RF018, HTTPS, `SECRET_KEY_BASE`, hosts, proxy confiável, cookies Secure/HSTS e privilégios runtime do banco. O Nginx deve sobrescrever cabeçalhos encaminhados e somente seu peer exato deve ser confiável para `remote_ip`. A aplicação ainda não foi implantada.
 
 Após atualizar:
 
@@ -353,7 +353,7 @@ Consulte a [ADR 0017](docs/adr/0017-sessoes-autenticacao-e-autorizacao.md) e a [
 
 Os achados, correções, inventário de rotas, testes e condições de publicação estão na [ADR 0018](docs/adr/0018-revisao-de-seguranca-e-condicoes-de-publicacao.md). A área pública limita leituras, consultas de disponibilidade e tentativas de criação por IP no PostgreSQL. Corpos HTTP têm limite de 64 KiB. Idempotência continua impedindo duplicações; tentativas limitadas não são contadas como novas reservas confirmadas.
 
-Produção exige `APP_HOST` exato e `SECRET_KEY_BASE` com pelo menos 64 caracteres. `TRUSTED_PROXY_CIDRS` aceita somente os proxies reais; vazio significa que cabeçalhos encaminhados não são confiáveis. Use `.env.production.example` como referência sem segredos. `ADMIN_ACCESS_ENABLED=true` não dispensa autenticação e recusa publicação com role PostgreSQL privilegiado. O usuário superuser do Compose local não é adequado para produção; migrations e runtime deverão usar credenciais separadas no RF018.
+Produção exige `APP_HOST` exato, `SECRET_KEY_BASE` com pelo menos 64 caracteres e `TRUSTED_PROXY_CIDRS` com peer de proxy definido. Use `.env.production.example` como referência sem segredos. `ADMIN_ACCESS_ENABLED=true` não dispensa autenticação e o boot runtime recusa privilégios PostgreSQL excessivos. `compose.production.yaml` separa credenciais admin, migration e runtime; o roteiro está em [docs/deploy](docs/deploy/README.md).
 
 Web/worker executam sem capabilities adicionais e com `no-new-privileges`. Mantenha o acesso em loopback e a publicação desabilitada até validar privilégios do banco, TLS, proxies, firewall, imagens, backups e cache de navegação. Nenhum deploy foi realizado.
 # dsv-agendamentos

@@ -1,0 +1,52 @@
+# Pin the official multi-platform Ruby manifest; update only in a reviewed change.
+FROM ruby:3.4.13-slim@sha256:f038b6952ce49d4d7bcbe2a6c194299f5c70b45fc6d9f9fec4798c4c0f61aed3 AS build
+
+WORKDIR /rails
+
+ENV BUNDLE_PATH=/usr/local/bundle \
+    BUNDLE_DEPLOYMENT=1 \
+    BUNDLE_FROZEN=1 \
+    BUNDLE_WITHOUT=development:test \
+    RAILS_ENV=production \
+    APP_DATABASE_ROLE=migration \
+    APP_HOST=assets.invalid
+
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y build-essential libpq-dev libyaml-dev git ca-certificates && \
+    rm -rf /var/lib/apt/lists/* && \
+    gem install bundler --version 2.6.2 --no-document
+
+COPY Gemfile Gemfile.lock .ruby-version ./
+RUN bundle install
+
+COPY . .
+RUN mkdir -p log tmp/pids storage && \
+    SECRET_KEY_BASE_DUMMY=1 bundle exec rails assets:precompile && \
+    rm -rf tmp/cache
+
+FROM ruby:3.4.13-slim@sha256:f038b6952ce49d4d7bcbe2a6c194299f5c70b45fc6d9f9fec4798c4c0f61aed3 AS runtime
+
+WORKDIR /rails
+
+ENV RAILS_ENV=production \
+    BUNDLE_PATH=/usr/local/bundle \
+    BUNDLE_DEPLOYMENT=1 \
+    BUNDLE_FROZEN=1 \
+    BUNDLE_WITHOUT=development:test \
+    RAILS_LOG_TO_STDOUT=true
+
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y libpq5 libyaml-0-2 ca-certificates tzdata && \
+    rm -rf /var/lib/apt/lists/* && \
+    groupadd --gid 10001 rails && \
+    useradd --uid 10001 --gid 10001 --home-dir /home/rails --create-home --shell /usr/sbin/nologin rails
+
+COPY --from=build /usr/local/bundle /usr/local/bundle
+COPY --from=build --chown=rails:rails /rails /rails
+RUN mkdir -p /rails/log /rails/tmp/pids /rails/storage && \
+    chown -R rails:rails /rails/log /rails/tmp /rails/storage
+
+USER 10001:10001
+EXPOSE 3000
+ENTRYPOINT ["/rails/bin/docker-entrypoint"]
+CMD ["bundle", "exec", "puma", "-C", "config/puma.rb"]

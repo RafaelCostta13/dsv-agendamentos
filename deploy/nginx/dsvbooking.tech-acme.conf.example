@@ -1,0 +1,19 @@
+# Temporary HTTP-only vhost for issuing the first domain certificate.
+# Use only after DNS points to this VPS. Replace this with the definitive
+# dsvbooking.tech.conf.example after Certbot has created the certificate files.
+server_tokens off;
+
+server {
+    listen 80;
+    server_name dsvbooking.tech;
+
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/html;
+        default_type text/plain;
+        try_files $uri =404;
+    }
+
+    location / {
+        return 404;
+    }
+}

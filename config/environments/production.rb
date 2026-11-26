@@ -3,7 +3,12 @@ require "active_support/core_ext/integer/time"
 Rails.application.configure do
   host = ENV.fetch("APP_HOST")
   raise "APP_HOST must be a DNS hostname" unless host.match?(/\A[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\z/i) && host.include?(".")
-  raise "SECRET_KEY_BASE must contain at least 64 characters" if ENV.fetch("SECRET_KEY_BASE").length < 64
+  if ENV["SECRET_KEY_BASE_DUMMY"].present?
+    config.secret_key_base = "1" * 64
+  else
+    secret_key_base = ENV.fetch("SECRET_KEY_BASE")
+    raise "SECRET_KEY_BASE must contain at least 64 characters" if secret_key_base.length < 64
+  end
   config.hosts = [ host ]
   # Settings specified here will take precedence over those in config/application.rb.
 

@@ -48,3 +48,5 @@ Os arquivos abaixo são as especificações dos RFs. As decisões ficam em ADRs 
 - [RF016 — Autenticação e Autorização de Usuários](RF016%20%E2%80%94%20Autentica%C3%A7%C3%A3o%20e%20Autoriza%C3%A7%C3%A3o%20de%20Usu%C3%A1rios.md).
 
 - [RF017 — Revisão Completa de Segurança da Aplicação](RF017%20%E2%80%94%20Revis%C3%A3o%20Completa%20de%20Seguran%C3%A7a%20da%20Aplica%C3%A7%C3%A3o.md).
+
+- [RF018 — Preparação da Aplicação para Ambiente de Produção](RF018%20%E2%80%94%20Prepara%C3%A7%C3%A3o%20da%20Aplica%C3%A7%C3%A3o%20para%20Ambiente%20de%20Produ%C3%A7%C3%A3o.md).

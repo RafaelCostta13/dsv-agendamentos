@@ -6,7 +6,7 @@ O formato oficial do snapshot é SQL (`db/structure.sql`), para preservar a trig
 
 ## Valores fixos do domínio
 
-`lib/agenda_definition.rb` centraliza oito docas numéricas de 1 a 8 e dez janelas. O zero à esquerda das docas será apenas apresentação. Não haverá cadastro de docas ou janelas nem registros prévios de disponibilidade. Capacidade nominal: 80 posições por dia. A distribuição das docas entre entrega e coleta ainda não foi definida.
+`lib/agenda_definition.rb` centraliza oito docas numéricas de 1 a 8 e dez janelas. O zero à esquerda das docas será apenas apresentação. Não haverá cadastro de docas ou janelas nem registros prévios de disponibilidade. Capacidade nominal: 80 posições por dia. O formulário público usa docas 1–3 para entrega e 4–8 para coleta; o backend valida a mesma distribuição.
 
 | Janela | Início | Fim |
 | --- | --- | --- |
