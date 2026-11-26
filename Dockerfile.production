@@ -30,13 +30,16 @@ WORKDIR /rails
 
 ENV RAILS_ENV=production \
     BUNDLE_PATH=/usr/local/bundle \
+    BUNDLE_USER_HOME=/tmp/bundler \
     BUNDLE_DEPLOYMENT=1 \
     BUNDLE_FROZEN=1 \
     BUNDLE_WITHOUT=development:test \
     RAILS_LOG_TO_STDOUT=true
 
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y libpq5 libyaml-0-2 ca-certificates tzdata && \
+    apt-get install --no-install-recommends -y libpq5 postgresql-client-17 libyaml-0-2 ca-certificates tzdata && \
+    command -v psql && psql --version && \
+    command -v pg_dump && pg_dump --version && \
     rm -rf /var/lib/apt/lists/* && \
     groupadd --gid 10001 rails && \
     useradd --uid 10001 --gid 10001 --home-dir /home/rails --create-home --shell /usr/sbin/nologin rails

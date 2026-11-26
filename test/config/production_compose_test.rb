@@ -79,6 +79,22 @@ class ProductionComposeTest < ActiveSupport::TestCase
     refute_includes dockerfile, "SECRET_KEY_BASE="
   end
 
+  test "production image includes PostgreSQL 17 clients and writable Bundler user state" do
+    dockerfile = Rails.root.join("Dockerfile.production").read
+    runtime_stage = dockerfile.split(" AS runtime", 2).last
+
+    assert_includes runtime_stage, "postgresql-client-17"
+    assert_includes runtime_stage, "command -v psql && psql --version"
+    assert_includes runtime_stage, "command -v pg_dump && pg_dump --version"
+    assert_includes runtime_stage, "BUNDLE_USER_HOME=/tmp/bundler"
+    refute_includes runtime_stage, "postgresql-17 "
+
+    compose = YAML.safe_load_file(Rails.root.join("compose.production.yaml"), aliases: true)
+    %w[web worker migrate].each do |name|
+      assert compose.fetch("services").fetch(name).fetch("tmpfs").any? { |mount| mount.start_with?("/tmp:") }
+    end
+  end
+
   test "Nginx template uses a fixed host, overwrites forwarding headers, and keeps ACME on the host" do
     nginx = Rails.root.join("deploy/nginx/dsvbooking.tech.conf.example").read
     acme = Rails.root.join("deploy/nginx/dsvbooking.tech-acme.conf.example").read

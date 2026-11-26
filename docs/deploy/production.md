@@ -4,7 +4,7 @@ Este roteiro destina-se ao responsável pela VPS Ubuntu informada no RF018. Não
 
 ## Arquitetura
 
-`compose.production.yaml` usa projeto, rede e volumes próprios. Serviços permanentes: `db`, `web`, `worker`; `migrate` executa uma vez antes de web/worker, usa a mesma imagem e não tem restart permanente. `Dockerfile.production` usa build multi-stage, Ruby 3.4.13, Bundler 2.6.2, lockfile congelado, gems sem grupos development/test, assets compilados e UID/GID 10001. Web e worker usam filesystem read-only, tmpfs, `cap_drop: ALL`, `no-new-privileges` e nenhum bind mount do código. Não há socket Docker nem porta pública do banco. Puma escuta `0.0.0.0:3000` no container e somente `127.0.0.1:${HOST_RAILS_PORT}:3000` no host. A rede dos containers é interna. Logs usam driver Docker `local`, cinco arquivos de 10 MiB por serviço.
+`compose.production.yaml` usa projeto, rede e volumes próprios. Serviços permanentes: `db`, `web`, `worker`; `migrate` executa uma vez antes de web/worker, usa a mesma imagem e não tem restart permanente. `Dockerfile.production` usa build multi-stage, Ruby 3.4.13, Bundler 2.6.2, lockfile congelado, gems sem grupos development/test, assets compilados e UID/GID 10001. A imagem Rails instala `postgresql-client-17` (inclui `psql` e `pg_dump`), sem instalar o servidor PostgreSQL, e verifica os executáveis durante o build. Bundler grava estado de usuário em `/tmp/bundler`; o tmpfs `/tmp` de cada serviço é gravável pelo UID 10001. Web e worker usam filesystem read-only, tmpfs, `cap_drop: ALL`, `no-new-privileges` e nenhum bind mount do código. Não há socket Docker nem porta pública do banco. Puma escuta `0.0.0.0:3000` no container e somente `127.0.0.1:${HOST_RAILS_PORT}:3000` no host. A rede dos containers é interna. Logs usam driver Docker `local`, cinco arquivos de 10 MiB por serviço.
 
 PostgreSQL `17.12-alpine` persiste em `dsv_agenda_production_postgres`; storage Rails em volume separado. Não reutilize nomes/volumes de desenvolvimento. Papéis distintos:
 
@@ -63,6 +63,17 @@ docker compose --env-file .env.production -f compose.production.yaml logs --tail
 ```
 
 Migration com erro bloqueia web/worker. Não execute `db:drop`, `db:reset`, seeds de usuários ou recrie volumes para resolver falhas.
+
+### Recuperação segura após falha em `db:structure:load`
+
+Antes de repetir uma migration que falhou, preserve os logs e faça um backup consistente do banco. A ausência do executável `psql` faz o Rails abortar antes de iniciar a carga de `db/structure.sql`; nesse caso a carga não criou objetos. Se os logs não confirmarem essa causa, não presuma que o banco ficou intacto: consulte o catálogo PostgreSQL (tabelas, sequences e funções no schema `public`) e `schema_migrations` usando uma conexão de diagnóstico somente leitura. Compare os objetos com `db/structure.sql` e os registros de migrations esperados. Não remova objetos nem edite `schema_migrations` manualmente. Se houver carga parcial ou estado divergente, pare web/worker e peça revisão de DBA com backup antes de qualquer reparo não destrutivo. Depois de confirmar ausência de objetos parciais ou estado consistente, atualize a imagem e reexecute somente o serviço `migrate`:
+
+```sh
+docker compose --env-file .env.production -f compose.production.yaml build migrate
+docker compose --env-file .env.production -f compose.production.yaml run --rm migrate
+```
+
+O segundo comando usa o volume existente; não execute `down -v`, `volume rm`, `db:reset` nem recrie usuários. Verifique exit code 0 e grants antes de iniciar/recriar web e worker.
 
 ## Verificação e primeiro administrador
 
