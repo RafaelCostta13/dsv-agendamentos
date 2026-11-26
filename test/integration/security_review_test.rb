@@ -4,11 +4,11 @@ class SecurityReviewTest < ActionDispatch::IntegrationTest
   test "untrusted forwarding headers cannot rotate the login IP limit" do
     30.times do |index|
       post login_path, params: { login: { email: "missing-#{index}@example.test", password: "wrong" } },
-        headers: { "X-Forwarded-For" => "198.51.100.#{index + 1}" }
+        headers: { "REMOTE_ADDR" => "203.0.113.10", "X-Forwarded-For" => "198.51.100.#{index + 1}" }
       assert_response :unprocessable_entity
     end
     post login_path, params: { login: { email: "another@example.test", password: "wrong" } },
-      headers: { "X-Forwarded-For" => "203.0.113.1" }
+      headers: { "REMOTE_ADDR" => "203.0.113.10", "X-Forwarded-For" => "203.0.113.1" }
     assert_response :too_many_requests
   end
 

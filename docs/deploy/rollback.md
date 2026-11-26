@@ -1,40 +1,21 @@
 # Atualização e rollback
 
-Identifique imagem por versão ou commit e use o mesmo `IMAGE_TAG` para web, worker e migrations. Não sobrescreva tag publicada nem use `latest`. Registre o tag anterior antes da mudança.
+Produção usa a versão do código presente no checkout local da VPS e a imagem estável `dsv-agendamentos-production:local`; o commit Git identifica a versão. Veja o fluxo normal e a execução manual de migrations em [production.md](production.md).
 
-## Atualização
+## Rollback da aplicação
 
-Na VPS, inspecione a árvore e atualize somente checkout limpo:
+1. Registre o erro e pare de promover a nova versão. Não reverta o banco automaticamente.
+2. Confirme o commit anterior e que as migrations concluídas são compatíveis com o código anterior. Se não forem, interrompa e prepare plano próprio de recuperação com backup.
+3. Faça checkout do commit anterior, reconstrua a imagem e recrie os serviços:
 
-```sh
-cd /opt/apps/dsv-agendamentos
-git status --short
-git pull --ff-only
-```
+   ```sh
+   git log -1 --oneline
+   git switch --detach COMMIT_SHA_ANTERIOR
+   docker compose --env-file .env.production -f compose.production.yaml build
+   docker compose --env-file .env.production -f compose.production.yaml up -d --remove-orphans
+   docker compose --env-file .env.production -f compose.production.yaml ps
+   ```
 
-Atualize `IMAGE_TAG`, revise variáveis e faça backup conforme [backup-restore.md](backup-restore.md). Valide configuração, construa e atualize:
+4. Valide `/ready`, os logs, o formulário, a autenticação e o worker antes de retomar o tráfego. Depois, retorne ao branch de manutenção quando a correção estiver pronta.
 
-```sh
-docker compose --env-file .env.production -f compose.production.yaml config --quiet
-docker compose --env-file .env.production -f compose.production.yaml build web
-docker compose --env-file .env.production -f compose.production.yaml up -d web worker
-docker compose --env-file .env.production -f compose.production.yaml ps
-docker compose --env-file .env.production -f compose.production.yaml logs --tail=100 migrate web worker
-```
-
-`migrate` precede web/worker. Valide `/ready`, `/agendar`, autenticação/autorização se habilitadas, worker e logs. Migration incompatível exige janela e plano próprios antes da publicação.
-
-## Rollback
-
-1. Registre o erro e interrompa a promoção da nova tag.
-2. Se a aplicação ainda responder com segurança, retorne `IMAGE_TAG` à imagem anterior imutável e recrie web/worker. Se migration falhou, confira seu exit code antes de iniciar processos.
-3. Valide healthchecks e fluxos afetados.
-4. Se migration concluiu, não presuma que schema pode voltar. O código anterior só é compatível com mudanças backward-compatible; uma alteração destrutiva exige plano autorizado de restauração e manutenção.
-5. Não remova volumes, rode `db:rollback` em massa, `db:reset` ou `docker system prune` como rollback automático.
-
-```sh
-docker compose --env-file .env.production -f compose.production.yaml ps
-docker compose --env-file .env.production -f compose.production.yaml logs --tail=100 db migrate web worker
-```
-
-Não automatize rollback de banco nem exclusão de recursos persistentes. Registre a decisão operacional e valide integridade antes de retomar tráfego.
+Nunca remova volumes, rode `db:rollback` em massa, `db:reset` ou `docker system prune` como rollback automático. Restauração de banco é um procedimento separado, com backup e autorização operacional.

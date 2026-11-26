@@ -8,7 +8,6 @@ ENV BUNDLE_PATH=/usr/local/bundle \
     BUNDLE_FROZEN=1 \
     BUNDLE_WITHOUT=development:test \
     RAILS_ENV=production \
-    APP_DATABASE_ROLE=migration \
     APP_HOST=assets.invalid
 
 RUN apt-get update -qq && \
@@ -30,7 +29,6 @@ WORKDIR /rails
 
 ENV RAILS_ENV=production \
     BUNDLE_PATH=/usr/local/bundle \
-    BUNDLE_USER_HOME=/tmp/bundler \
     BUNDLE_DEPLOYMENT=1 \
     BUNDLE_FROZEN=1 \
     BUNDLE_WITHOUT=development:test \
@@ -40,16 +38,12 @@ RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y libpq5 postgresql-client-17 libyaml-0-2 ca-certificates tzdata && \
     command -v psql && psql --version && \
     command -v pg_dump && pg_dump --version && \
-    rm -rf /var/lib/apt/lists/* && \
-    groupadd --gid 10001 rails && \
-    useradd --uid 10001 --gid 10001 --home-dir /home/rails --create-home --shell /usr/sbin/nologin rails
+    rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /usr/local/bundle /usr/local/bundle
-COPY --from=build --chown=rails:rails /rails /rails
-RUN mkdir -p /rails/log /rails/tmp/pids /rails/storage && \
-    chown -R rails:rails /rails/log /rails/tmp /rails/storage
+COPY --from=build /rails /rails
+RUN mkdir -p /rails/log /rails/tmp/pids /rails/storage
 
-USER 10001:10001
 EXPOSE 3000
 ENTRYPOINT ["/rails/bin/docker-entrypoint"]
 CMD ["bundle", "exec", "puma", "-C", "config/puma.rb"]

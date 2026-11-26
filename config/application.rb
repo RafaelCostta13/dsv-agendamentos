@@ -24,7 +24,7 @@ module DsvDocaAgenda
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 8.1
     config.middleware.insert_before ActionDispatch::RemoteIp, RequestBodyLimit
-    config.action_dispatch.trusted_proxies = ENV.fetch("TRUSTED_PROXY_CIDRS", "").split(",").reject(&:blank?).map { |cidr| IPAddr.new(cidr.strip) }
+    config.action_dispatch.trusted_proxies = ActionDispatch::RemoteIp::TRUSTED_PROXIES
     config.action_dispatch.default_headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
 
     # Please, add to the `ignore` list any other `lib` subdirectories that do
