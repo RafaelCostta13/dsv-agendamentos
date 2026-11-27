@@ -10,4 +10,5 @@ Não alterar retroativamente o conteúdo de uma decisão já adotada para escond
 
 ## Índice
 
+- [0020 — Layout compacto no desktop](0020-layout-compacto-no-desktop.md)
 - [0019 — Preparação para produção](0019-preparacao-para-producao.md)
